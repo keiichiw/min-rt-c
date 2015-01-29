@@ -72,7 +72,11 @@ vec screenx_dir, screeny_dir, screenz_dir;
 vec viewpoint;
 vec light, beam;
 
-obj *objects; 
+obj *objects;
+int n_objects;
+
+int *and_net[50];
+int **or_net; // or_net is an array of length 1 in min-rt.ml
 
 /******************************************************************************
    ユーティリティー
@@ -581,4 +585,71 @@ bool read_nth_object(int n) {
   else {
     return False; /* データの終了 */
   }
+}
+
+/**** 物体データ全体の読み込み ****/
+void read_object(int n) {
+  if (n < 60) {
+    if (read_nth_object(n)) {
+      read_object (n + 1);
+    }else {
+      n_objects = n;
+    }
+  }
+}
+
+void read_all_object() {
+  read_object(0);
+}
+
+/**** AND, OR ネットワークの読み込み ****/
+
+/* ネットワーク1つを読み込みベクトルにして返す */
+int *read_net_item(int length) {
+  int item = read_int ();
+  if (item == -1) {
+    int *ary = (int *) malloc(sizeof(int) * (length + 1));
+    int i;
+    for (i = 0; i < length + 1; ++i) {
+      ary[i] = -1;
+    }
+    return ary;
+  }else {
+    int *v = read_net_item (length + 1);
+    v[length] = item;
+    return v;
+  }
+}
+
+int **read_or_network(int length) {
+  int *net = read_net_item(0);
+  if (net[0] == -1) {
+    int **ary = (int **) malloc(sizeof(int*) * (length + 1));
+    int i;
+    for (i = 0; i < length + 1; ++i) {
+      ary[i] = net;
+    }
+    return ary;
+  } else {
+    int **v = read_or_network (length + 1);
+    v[length] = net;
+    return v;
+  }
+}
+
+
+void read_and_network (int n) {
+  int *net = read_net_item(0);
+  if (net[0] != -1) {
+    and_net[n] = net;
+    read_and_network (n + 1);
+  }
+}
+
+void read_parameter() {
+  read_screen_settings();
+  read_light();
+  read_all_object ();
+  read_and_network(0);
+  or_net = read_or_network(0);
 }
