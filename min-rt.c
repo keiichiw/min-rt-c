@@ -78,6 +78,8 @@ int n_objects;
 int *and_net[50];
 int **or_net; // or_net is an array of length 1 in min-rt.ml
 
+float solver_dist; // an array of length 1 in min-rt.ml
+
 /******************************************************************************
    ユーティリティー
 *****************************************************************************/
@@ -652,4 +654,74 @@ void read_parameter() {
   read_all_object ();
   read_and_network(0);
   or_net = read_or_network(0);
+}
+
+/******************************************************************************
+   直線とオブジェクトの交点を求める関数群
+*****************************************************************************/
+
+/* solver :
+   オブジェクト (の index) と、ベクトル L, P を受けとり、
+   直線 Lt + P と、オブジェクトとの交点を求める。
+   交点がない場合は 0 を、交点がある場合はそれ以外を返す。
+   この返り値は nvector で交点の法線ベクトルを求める際に必要。
+   (直方体の場合)
+
+   交点の座標は t の値として solver_dist に格納される。
+*/
+
+/* 直方体の指定された面に衝突するかどうか判定する */
+/* i0 : 面に垂直な軸のindex X:0, Y:1, Z:2         i2,i3は他の2軸のindex */
+bool solver_rect_surface(obj *m, vec *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
+  float *dirvec_arr = (float *) dirvec;
+  if (dirvec_arr[i0] == 0.0) {
+    return False;
+  } else {
+    vec *abc = o_param_abc(m);
+    float *abc_arr = (float *) abc;
+    float d = fneg_cond(xor(o_isinvert(m), fisneg(dirvec_arr[i0])), abc_arr[i0]);
+
+    float d2 = (d - b0) / dirvec_arr[i0];
+    if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
+      if ((fabs(d2 * dirvec_arr[i2] + b2)) < abc_arr[i2]) {
+	solver_dist = d2;
+	return True;
+      }else {
+	return False;
+      }
+    }
+    else {
+      return False;
+    }
+  }
+}
+
+
+
+/***** 直方体オブジェクトの場合 ****/
+int solver_rect (obj *m, vec *dirvec, float b0, float b1, float b2) {
+  if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
+      return 1;   /* YZ 平面 */
+  } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
+    return 2;   /* ZX 平面 */
+  } else if (solver_rect_surface(m, dirvec, b2, b0, b1, 2, 0, 1)) {
+    return 3;   /* XY 平面 */
+  } else {
+    return 0;
+  }
+}
+
+
+/* 平面オブジェクトの場合 */
+int solver_surface(obj *m, vec *dirvec, float b0, float b1, float b2) {
+  /* 点と平面の符号つき距離 */
+  /* 平面は極性が負に統一されている */
+  vec *abc = o_param_abc(m);
+  float d = veciprod(dirvec, abc);
+  if (d > 0.0) {
+    solver_dist = fneg(veciprod2(abc, b0, b1, b2)) / d;
+    return 1;
+  } else {
+    return 0;
+  }
 }
