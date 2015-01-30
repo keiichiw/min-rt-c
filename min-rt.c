@@ -725,3 +725,35 @@ int solver_surface(obj *m, vec *dirvec, float b0, float b1, float b2) {
     return 0;
   }
 }
+
+/* 3変数2次形式 v^t A v を計算 */
+/* 回転が無い場合は対角部分のみ計算すれば良い */
+float quadratic(obj *m, float v0, float v1, float v2) {
+  float diag_part =
+    fsqr(v0) * o_param_a(m) + fsqr(v1) * o_param_b(m) + fsqr(v2) * o_param_c(m);
+  if (o_isrot(m) == 0) {
+    return diag_part;
+  } else {
+    return diag_part
+      + v1 * v2 * o_param_r1(m)
+      + v2 * v0 * o_param_r2(m)
+      + v0 * v1 * o_param_r3(m);
+  }
+}
+
+/* 3変数双1次形式 v^t A w を計算 */
+/* 回転が無い場合は A の対角部分のみ計算すれば良い */
+float bilinear(obj *m, float v0, float v1, float v2, float w0, float w1, float w2) {
+  float diag_part =
+    v0 * w0 * o_param_a(m)
+    + v1 * w1 * o_param_b(m)
+    + v2 * w2 * o_param_c(m);
+  if (o_isrot(m) == 0) {
+    return diag_part;
+  } else {
+    diag_part + fhalf
+      ((v2 * w1 + v1 * w2) * o_param_r1(m)
+       + (v0 * w2 + v2 * w0) * o_param_r2(m)
+       + (v0 * w1 + v1 * w0) * o_param_r3(m));
+  }
+}
