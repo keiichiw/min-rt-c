@@ -757,3 +757,125 @@ float bilinear(obj *m, float v0, float v1, float v2, float w0, float w1, float w
        + (v0 * w1 + v1 * w0) * o_param_r3(m));
   }
 }
+
+/* 2次曲面または円錐の場合 */
+/* 2次形式で表現された曲面 x^t A x - (0 か 1) = 0 と 直線 base + dirvec*t の
+   交点を求める。曲線の方程式に x = base + dirvec*t を代入してtを求める。
+   つまり (base + dirvec*t)^t A (base + dirvec*t) - (0 か 1) = 0、
+   展開すると (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
+   (base^t A base) - (0か1) = 0 、よってtに関する2次方程式を解けば良い。*/
+
+int solver_second(obj *m, vec *dirvec, float b0, float b1, float b2) {
+  /* 解の公式 (-b' ± sqrt(b'^2 - a*c)) / a  を使用(b' = b/2) */
+  /* a = dirvec^t A dirvec */
+  float aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
+
+  if (aa == 0.0) {
+    return 0; /* 正確にはこの場合も1次方程式の解があるが、無視しても通常は大丈夫 */
+  } else {
+
+    /* b' = b/2 = dirvec^t A base   */
+    float bb = bilinear(m, dirvec->x, dirvec->y, dirvec->z, b0, b1, b2);
+    /* c = base^t A base  - (0か1)  */
+    float cc0 = quadratic(m, b0, b1, b2);
+    float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
+    /* 判別式 */
+    float d = bb * bb - aa * cc;
+
+    if (d > 0.0) {
+      float sd = sqrt(d);
+      float t1 = o_isinvert(m) ? sd : - sd;
+      solver_dist = (t1 - bb) /  aa;
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+}
+
+/**** solver のメインルーチン ****/
+int solver(int index, vec *dirvec, vec *org) {
+  obj *m = &objects[index];
+  /* 直線の始点を物体の基準位置に合わせて平行移動 */
+  float b0 =  org->x - o_param_x(m);
+  float b1 =  org->y - o_param_y(m);
+  float b2 =  org->z - o_param_z(m);
+  int m_shape = o_form(m);
+  /* 物体の種類に応じた補助関数を呼ぶ */
+  if (m_shape == 1) {
+    solver_rect(m, dirvec, b0, b1, b2);    /* 直方体 */
+  } else if (m_shape == 2) {
+    solver_surface(m, dirvec, b0, b1, b2); /* 平面 */
+  } else {
+    solver_second(m, dirvec, b0, b1, b2);  /* 2次曲面/円錐 */
+  }
+}
+
+/******************************************************************************
+   solverのテーブル使用高速版
+*****************************************************************************/
+/*
+   通常版solver と同様、直線 start + t * dirvec と物体の交点を t の値として返す
+   t の値は solver_distに格納
+
+   solver_fast は、直線の方向ベクトル dirvec について作ったテーブルを使用
+   内部的に solver_rect_fast, solver_surface_fast, solver_second_fastを呼ぶ
+
+   solver_fast2 は、dirvecと直線の始点 start それぞれに作ったテーブルを使用
+   直方体についてはstartのテーブルによる高速化はできないので、solver_fastと
+   同じく solver_rect_fastを内部的に呼ぶ。それ以外の物体については
+   solver_surface_fast2またはsolver_second_fast2を内部的に呼ぶ
+
+   変数dconstは方向ベクトル、sconstは始点に関するテーブル
+*/
+
+/***** solver_rectのdirvecテーブル使用高速版 ******/
+bool solver_rect_fast(obj *m, vec *v, float *dconst, float b0, float b1, float b2) {
+  float d0 = (dconst[0] - b0) * dconst[1];
+  bool tmp0;
+  /* YZ平面との衝突判定 */
+  if (fabs (d0 * v->y + b1) < o_param_b(m)) { 
+    if (fabs (d0 * v->z + b2) < o_param_c(m)) {
+      tmp0 = dconst[1] != 0.0;
+    }
+    else {
+      tmp0 = False;
+    }
+  }
+  else tmp0 = False;
+  if (tmp0 != False) {
+    solver_dist = d0;
+    return 1;
+  } 
+  float d1 = (dconst[2] - b1) * dconst[3];
+  bool tmp_zx;
+  /* ZX平面との衝突判定 */
+  if (fabs (d1 * v->x + b0) < o_param_a(m)) {
+    if (fabs (d1 * v->z + b2) < o_param_c(m)) {
+      tmp_zx = dconst[3] != 0.0;
+    } else {
+      tmp_zx = False;
+    }
+  }
+  else tmp_zx = False;
+  if (tmp_zx != False) {
+    solver_dist =- d1;
+    return 2;
+  }
+  float d2 = (dconst[4] - b2) * dconst[5];
+  bool tmp_xy;
+  /* XY平面との衝突判定 */
+  if (fabs (d2 * v->x + b0) < o_param_a(m)) {
+    if (fabs (d2 * v->y + b1) < o_param_b(m)) {
+      tmp_xy = dconst[5] != 0.0;
+    }
+    else tmp_xy = False;
+  }
+  else tmp_xy = False;
+  if (tmp_xy != False) {
+    solver_dist = d2;
+    return 3;
+  }
+  return 0;
+}
+
