@@ -63,6 +63,22 @@ typedef struct {
   float br;
 } refl;
 
+/*
+  global variables
+ */
+
+vec screen;
+vec screenx_dir, screeny_dir, screenz_dir;
+vec viewpoint;
+vec light, beam;
+
+obj *objects;
+int n_objects;
+
+int *and_net[50];
+int **or_net; // or_net is an array of length 1 in min-rt.ml
+
+float solver_dist; // an array of length 1 in min-rt.ml
 
 /******************************************************************************
    ユーティリティー
@@ -412,3 +428,454 @@ float r_bright (refl *r) {
 float rad (float x) {
   return x * 0.017453293;
 }
+
+/**** 環境データの読み込み ****/
+
+void read_screen_settings (void) {
+  screen.x = read_float();
+  screen.y = read_float();
+  screen.z = read_float();
+  float v1 = rad(read_float());
+  float cos_v1 = cos(v1);
+  float sin_v1 = sin(v1);
+  float v2 = rad(read_float());
+  float cos_v2 = cos(v2);
+  float sin_v2 = sin(v2);
+  screenz_dir.x = cos_v1 * sin_v2 * 200.0;
+  screenz_dir.y = sin_v1 * (-200.0);
+  screenz_dir.z = cos_v1 * cos_v2 * 200.0;
+  screenx_dir.x = cos_v2;
+  screenx_dir.y = 0.0;
+  screenx_dir.z = - sin_v2;
+  screeny_dir.x = - sin_v1 * sin_v2;
+  screeny_dir.y = - cos_v1;
+  screeny_dir.z = - sin_v1 * cos_v2;
+  viewpoint.x = screen.x - screenz_dir.x;
+  viewpoint.y = screen.y - screenz_dir.y;
+  viewpoint.z = screen.z - screenz_dir.z;
+}
+
+
+void read_light(void) {
+  int nl = radread_int();
+  float l1 = rad(read_float());
+  float sl1 = sin(l1);
+  light.y = - sl1;
+  float l2 = rad(read_float());
+  float cl1 = cos(l1);
+  float sl2 = sin(l2);
+  light.x = cl1 * sl2;
+  float cl2 = cos(l2);
+  light.z = cl1 * cl2;
+  beam.x = read_float();
+}
+
+void rotate_quadratic_matrix(vec *abc, vec *rot) {
+/* 回転行列の積 R(z)R(y)R(x) を計算する */
+  float cos_x = cos(rot->x);
+  float sin_x = sin(rot->x);
+  float cos_y = cos(rot->y);
+  float sin_y = sin(rot->y);
+  float cos_z = cos(rot->z);
+  float sin_z = sin(rot->z);
+
+  float m00 = cos_y * cos_z;
+  float m01 = sin_x * sin_y * cos_z - cos_x * sin_z;
+  float m02 = cos_x * sin_y * cos_z + sin_x * sin_z;
+
+  float m10 = cos_y * sin_z;
+  float m11 = sin_x * sin_y * sin_z + cos_x * cos_z;
+  float m12 = cos_x * sin_y * sin_z - sin_x * cos_z;
+
+  float m20 = - sin_y;
+  float m21 = sin_x * cos_y;
+  float m22 = cos_x * cos_y;
+
+  /* a, b, cの元の値をバックアップ */
+  float ao = abc->x;
+  float bo = abc->y;
+  float co = abc->z;
+
+  /* R^t * A * R を計算 */
+
+  /* X^2, Y^2, Z^2成分 */
+  abc->x = ao * fsqr(m00) + bo * fsqr(m10) + co * fsqr(m20);
+  abc->y = ao * fsqr(m01) + bo * fsqr(m11) + co * fsqr(m21);
+  abc->z = ao * fsqr(m02) + bo * fsqr(m12) + co * fsqr(m22);
+
+  /* 回転によって生じた XY, YZ, ZX成分 */
+  rot->x = 2.0 * (ao * m01 * m02 + bo * m11 * m12 + co * m21 * m22);
+  rot->y = 2.0 * (ao * m00 * m02 + bo * m10 * m12 + co * m20 * m22);
+  rot->z = 2.0 * (ao * m00 * m01 + bo * m10 * m11 + co * m20 * m21);
+}
+
+/**** オブジェクト1つのデータの読み込み ****/
+bool read_nth_object(int n) {
+
+  int texture = read_int();
+  if (texture != -1) {
+    int form = read_int ();
+    int refltype = read_int ();
+    int isrot_p = read_int () ;
+
+    vec abc;
+    abc.x = read_float ();
+    abc.y = read_float ();
+    abc.z = read_float ();
+
+    vec xyz;
+    xyz.x = read_float ();
+    xyz.y = read_float ();
+    xyz.z = read_float ();
+
+    int m_invert = fisneg (read_float ());
+
+    vec reflparam;
+    reflparam.x = read_float (); /* diffuse */
+    reflparam.y = read_float (); /* hilight */
+
+    vec color;
+    color.x = read_float ();
+    color.y = read_float ();
+    color.z = read_float (); /* 15 */
+
+    vec rotation;
+    if (isrot_p != 0) {
+	 rotation.x = rad (read_float ());
+	 rotation.y = rad (read_float ());
+	 rotation.z = rad (read_float ());
+    }
+
+    /* パラメータの正規化 */
+
+    /* 注: 下記正規化 (form = 2) 参照 */
+    bool m_invert2 = form == 2 ? True : m_invert;
+    vec4 ctbl;
+    /* ここからあとは abc と rotation しか操作しない。*/
+    obj obj_m =
+      {texture, form, refltype, isrot_p,
+       abc, xyz, /* x-z */
+       m_invert2,
+       reflparam, /* reflection paramater */
+       color, /* color */
+       rotation, /* rotation */
+       ctbl /* constant table */
+      };
+      objects[n] = obj_m;
+
+      if (form == 3) {
+	/* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
+	float a = abc.x;
+	abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
+	float b = abc.y;
+	abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
+	float c = abc.z;
+	abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c);  /* Z^2 成分 */
+      }
+      else if (form == 2) {
+	/* 平面: 法線ベクトルを正規化, 極性を負に統一 */
+	vecunit_sgn(&abc, not(m_invert));
+      }
+
+      /* 2次形式行列に回転変換を施す */
+      if (isrot_p != 0) {
+	rotate_quadratic_matrix(&abc, &rotation);
+      }
+
+      return True;
+  }
+  else {
+    return False; /* データの終了 */
+  }
+}
+
+/**** 物体データ全体の読み込み ****/
+void read_object(int n) {
+  if (n < 60) {
+    if (read_nth_object(n)) {
+      read_object (n + 1);
+    }else {
+      n_objects = n;
+    }
+  }
+}
+
+void read_all_object() {
+  read_object(0);
+}
+
+/**** AND, OR ネットワークの読み込み ****/
+
+/* ネットワーク1つを読み込みベクトルにして返す */
+int *read_net_item(int length) {
+  int item = read_int ();
+  if (item == -1) {
+    int *ary = (int *) malloc(sizeof(int) * (length + 1));
+    int i;
+    for (i = 0; i < length + 1; ++i) {
+      ary[i] = -1;
+    }
+    return ary;
+  }else {
+    int *v = read_net_item (length + 1);
+    v[length] = item;
+    return v;
+  }
+}
+
+int **read_or_network(int length) {
+  int *net = read_net_item(0);
+  if (net[0] == -1) {
+    int **ary = (int **) malloc(sizeof(int*) * (length + 1));
+    int i;
+    for (i = 0; i < length + 1; ++i) {
+      ary[i] = net;
+    }
+    return ary;
+  } else {
+    int **v = read_or_network (length + 1);
+    v[length] = net;
+    return v;
+  }
+}
+
+
+void read_and_network (int n) {
+  int *net = read_net_item(0);
+  if (net[0] != -1) {
+    and_net[n] = net;
+    read_and_network (n + 1);
+  }
+}
+
+void read_parameter() {
+  read_screen_settings();
+  read_light();
+  read_all_object ();
+  read_and_network(0);
+  or_net = read_or_network(0);
+}
+
+/******************************************************************************
+   直線とオブジェクトの交点を求める関数群
+*****************************************************************************/
+
+/* solver :
+   オブジェクト (の index) と、ベクトル L, P を受けとり、
+   直線 Lt + P と、オブジェクトとの交点を求める。
+   交点がない場合は 0 を、交点がある場合はそれ以外を返す。
+   この返り値は nvector で交点の法線ベクトルを求める際に必要。
+   (直方体の場合)
+
+   交点の座標は t の値として solver_dist に格納される。
+*/
+
+/* 直方体の指定された面に衝突するかどうか判定する */
+/* i0 : 面に垂直な軸のindex X:0, Y:1, Z:2         i2,i3は他の2軸のindex */
+bool solver_rect_surface(obj *m, vec *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
+  float *dirvec_arr = (float *) dirvec;
+  if (dirvec_arr[i0] == 0.0) {
+    return False;
+  } else {
+    vec *abc = o_param_abc(m);
+    float *abc_arr = (float *) abc;
+    float d = fneg_cond(xor(o_isinvert(m), fisneg(dirvec_arr[i0])), abc_arr[i0]);
+
+    float d2 = (d - b0) / dirvec_arr[i0];
+    if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
+      if ((fabs(d2 * dirvec_arr[i2] + b2)) < abc_arr[i2]) {
+	solver_dist = d2;
+	return True;
+      }else {
+	return False;
+      }
+    }
+    else {
+      return False;
+    }
+  }
+}
+
+
+
+/***** 直方体オブジェクトの場合 ****/
+int solver_rect (obj *m, vec *dirvec, float b0, float b1, float b2) {
+  if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
+      return 1;   /* YZ 平面 */
+  } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
+    return 2;   /* ZX 平面 */
+  } else if (solver_rect_surface(m, dirvec, b2, b0, b1, 2, 0, 1)) {
+    return 3;   /* XY 平面 */
+  } else {
+    return 0;
+  }
+}
+
+
+/* 平面オブジェクトの場合 */
+int solver_surface(obj *m, vec *dirvec, float b0, float b1, float b2) {
+  /* 点と平面の符号つき距離 */
+  /* 平面は極性が負に統一されている */
+  vec *abc = o_param_abc(m);
+  float d = veciprod(dirvec, abc);
+  if (d > 0.0) {
+    solver_dist = fneg(veciprod2(abc, b0, b1, b2)) / d;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+/* 3変数2次形式 v^t A v を計算 */
+/* 回転が無い場合は対角部分のみ計算すれば良い */
+float quadratic(obj *m, float v0, float v1, float v2) {
+  float diag_part =
+    fsqr(v0) * o_param_a(m) + fsqr(v1) * o_param_b(m) + fsqr(v2) * o_param_c(m);
+  if (o_isrot(m) == 0) {
+    return diag_part;
+  } else {
+    return diag_part
+      + v1 * v2 * o_param_r1(m)
+      + v2 * v0 * o_param_r2(m)
+      + v0 * v1 * o_param_r3(m);
+  }
+}
+
+/* 3変数双1次形式 v^t A w を計算 */
+/* 回転が無い場合は A の対角部分のみ計算すれば良い */
+float bilinear(obj *m, float v0, float v1, float v2, float w0, float w1, float w2) {
+  float diag_part =
+    v0 * w0 * o_param_a(m)
+    + v1 * w1 * o_param_b(m)
+    + v2 * w2 * o_param_c(m);
+  if (o_isrot(m) == 0) {
+    return diag_part;
+  } else {
+    diag_part + fhalf
+      ((v2 * w1 + v1 * w2) * o_param_r1(m)
+       + (v0 * w2 + v2 * w0) * o_param_r2(m)
+       + (v0 * w1 + v1 * w0) * o_param_r3(m));
+  }
+}
+
+/* 2次曲面または円錐の場合 */
+/* 2次形式で表現された曲面 x^t A x - (0 か 1) = 0 と 直線 base + dirvec*t の
+   交点を求める。曲線の方程式に x = base + dirvec*t を代入してtを求める。
+   つまり (base + dirvec*t)^t A (base + dirvec*t) - (0 か 1) = 0、
+   展開すると (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
+   (base^t A base) - (0か1) = 0 、よってtに関する2次方程式を解けば良い。*/
+
+int solver_second(obj *m, vec *dirvec, float b0, float b1, float b2) {
+  /* 解の公式 (-b' ± sqrt(b'^2 - a*c)) / a  を使用(b' = b/2) */
+  /* a = dirvec^t A dirvec */
+  float aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
+
+  if (aa == 0.0) {
+    return 0; /* 正確にはこの場合も1次方程式の解があるが、無視しても通常は大丈夫 */
+  } else {
+
+    /* b' = b/2 = dirvec^t A base   */
+    float bb = bilinear(m, dirvec->x, dirvec->y, dirvec->z, b0, b1, b2);
+    /* c = base^t A base  - (0か1)  */
+    float cc0 = quadratic(m, b0, b1, b2);
+    float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
+    /* 判別式 */
+    float d = bb * bb - aa * cc;
+
+    if (d > 0.0) {
+      float sd = sqrt(d);
+      float t1 = o_isinvert(m) ? sd : - sd;
+      solver_dist = (t1 - bb) /  aa;
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+}
+
+/**** solver のメインルーチン ****/
+int solver(int index, vec *dirvec, vec *org) {
+  obj *m = &objects[index];
+  /* 直線の始点を物体の基準位置に合わせて平行移動 */
+  float b0 =  org->x - o_param_x(m);
+  float b1 =  org->y - o_param_y(m);
+  float b2 =  org->z - o_param_z(m);
+  int m_shape = o_form(m);
+  /* 物体の種類に応じた補助関数を呼ぶ */
+  if (m_shape == 1) {
+    solver_rect(m, dirvec, b0, b1, b2);    /* 直方体 */
+  } else if (m_shape == 2) {
+    solver_surface(m, dirvec, b0, b1, b2); /* 平面 */
+  } else {
+    solver_second(m, dirvec, b0, b1, b2);  /* 2次曲面/円錐 */
+  }
+}
+
+/******************************************************************************
+   solverのテーブル使用高速版
+*****************************************************************************/
+/*
+   通常版solver と同様、直線 start + t * dirvec と物体の交点を t の値として返す
+   t の値は solver_distに格納
+
+   solver_fast は、直線の方向ベクトル dirvec について作ったテーブルを使用
+   内部的に solver_rect_fast, solver_surface_fast, solver_second_fastを呼ぶ
+
+   solver_fast2 は、dirvecと直線の始点 start それぞれに作ったテーブルを使用
+   直方体についてはstartのテーブルによる高速化はできないので、solver_fastと
+   同じく solver_rect_fastを内部的に呼ぶ。それ以外の物体については
+   solver_surface_fast2またはsolver_second_fast2を内部的に呼ぶ
+
+   変数dconstは方向ベクトル、sconstは始点に関するテーブル
+*/
+
+/***** solver_rectのdirvecテーブル使用高速版 ******/
+bool solver_rect_fast(obj *m, vec *v, float *dconst, float b0, float b1, float b2) {
+  float d0 = (dconst[0] - b0) * dconst[1];
+  bool tmp0;
+  /* YZ平面との衝突判定 */
+  if (fabs (d0 * v->y + b1) < o_param_b(m)) { 
+    if (fabs (d0 * v->z + b2) < o_param_c(m)) {
+      tmp0 = dconst[1] != 0.0;
+    }
+    else {
+      tmp0 = False;
+    }
+  }
+  else tmp0 = False;
+  if (tmp0 != False) {
+    solver_dist = d0;
+    return 1;
+  } 
+  float d1 = (dconst[2] - b1) * dconst[3];
+  bool tmp_zx;
+  /* ZX平面との衝突判定 */
+  if (fabs (d1 * v->x + b0) < o_param_a(m)) {
+    if (fabs (d1 * v->z + b2) < o_param_c(m)) {
+      tmp_zx = dconst[3] != 0.0;
+    } else {
+      tmp_zx = False;
+    }
+  }
+  else tmp_zx = False;
+  if (tmp_zx != False) {
+    solver_dist =- d1;
+    return 2;
+  }
+  float d2 = (dconst[4] - b2) * dconst[5];
+  bool tmp_xy;
+  /* XY平面との衝突判定 */
+  if (fabs (d2 * v->x + b0) < o_param_a(m)) {
+    if (fabs (d2 * v->y + b1) < o_param_b(m)) {
+      tmp_xy = dconst[5] != 0.0;
+    }
+    else tmp_xy = False;
+  }
+  else tmp_xy = False;
+  if (tmp_xy != False) {
+    solver_dist = d2;
+    return 3;
+  }
+  return 0;
+}
+
