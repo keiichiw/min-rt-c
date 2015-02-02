@@ -7,59 +7,55 @@
 /* Arranged for Chez Scheme by Motohico Nanano                  */
 /* Arranged for Objective Caml by Y. Oiwa and E. Sumii          */
 /* Added diffuse ray tracer by Y.Ssugawara                      */
-/* Arranged for C by K.Watanabe                                 */
+/* Arranged for C by K.Watanabe and H. Kobayashi                */
 /*                                                              */
 /****************************************************************/
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "runtime.h"
-
-typedef enum {
-  True  = 1,
-  False = 0
-} bool;
 
 typedef struct l {
   int car;
   struct l *cdr;
-} list;
+} list_t;
 
 typedef struct {
   float x, y, z;
-} vec;
+} vec_t;
 
 typedef struct {
   float x, y, z, w;
-} vec4;
+} vec4_t;
 
 typedef struct {
-  int  tex, shape, surface;
-  bool isrot;
-  vec  abc, xyz;
-  bool invert;
-  vec  surfparams, color, rot123;
-  vec4 ctbl;
-} obj;
+  int    tex, shape, surface;
+  bool   isrot;
+  vec_t  abc, xyz;
+  bool   invert;
+  vec_t  surfparams, color, rot123;
+  vec4_t ctbl;
+} obj_t;
 
 typedef struct {
-  int   rgb;
-  list  isect_ps;
-  list  sids;
-  bool  cdif;
-  float engy;
-  float r20p;
-  int   gid;
-  vec   nvectors;
-} pixel;
+  int    rgb;
+  list_t isect_ps;
+  list_t sids;
+  bool   cdif;
+  float  engy;
+  float  r20p;
+  int    gid;
+  vec_t  nvectors;
+} pixel_t;
 
 typedef struct {
-  vec   vec;
+  vec_t   vec;
   int   cnst;
-} dvec;
+} dvec_t;
 
 typedef struct {
   int   sid;
-  dvec  dv;
+  dvec_t  dv;
   float br;
 } refl;
 
@@ -67,12 +63,12 @@ typedef struct {
   global variables
  */
 
-vec screen;
-vec screenx_dir, screeny_dir, screenz_dir;
-vec viewpoint;
-vec light, beam;
+vec_t screen;
+vec_t screenx_dir, screeny_dir, screenz_dir;
+vec_t viewpoint;
+vec_t light, beam;
 
-obj *objects;
+obj_t *objects;
 int n_objects;
 
 int *and_net[50];
@@ -111,38 +107,38 @@ int add_mod5 (int x, int y) {
 *****************************************************************************/
 
 /* 値代入 */
-void vecset (vec *v, float x, float y, float z) {
+void vecset (vec_t *v, float x, float y, float z) {
   v->x = x;
   v->y = y;
   v->z = z;
 }
 
 /* 同じ値で埋める */
-void vecfill (vec *v, float elem) {
+void vecfill (vec_t *v, float elem) {
   v->x = elem;
   v->y = elem;
   v->z = elem;
 }
 
 /* 零初期化 */
-void vecbzero (vec *v) {
+void vecbzero (vec_t *v) {
   vecfill(v, 0.0);
 }
 
 /* コピー */
-void veccpy (vec *dest, vec *src) {
+void veccpy (vec_t *dest, vec_t *src) {
   dest->x = src->x;
   dest->y = src->y;
   dest->z = src->z;
 }
 
 /* 距離の自乗 */
-float vecdist2 (vec *p, vec *q) {
+float vecdist2 (vec_t *p, vec_t *q) {
   return fsqr (p->x - q->x) + fsqr (p->y - q->y) + fsqr (p->z - q->z);
 }
 
 /* 正規化 ゼロ割りチェック無し */
-void vecunit (vec *v) {
+void vecunit (vec_t *v) {
   float il = 1.0 / sqrt(fsqr(v->x) + fsqr(v->y) + fsqr(v->z));
   v->x = v->x * il;
   v->y = v->y * il;
@@ -150,7 +146,7 @@ void vecunit (vec *v) {
 }
 
 /* 符号付正規化 ゼロ割チェック*/
-void vecunit_sgn (vec *v, int inv) {
+void vecunit_sgn (vec_t *v, int inv) {
   float l  = sqrt (fsqr(v->x) + fsqr(v->y) + fsqr(v->z));
   float il;
   if (fiszero(l)) {
@@ -166,45 +162,45 @@ void vecunit_sgn (vec *v, int inv) {
 }
 
 /* 内積 */
-float veciprod (vec *v, vec *w) {
+float veciprod (vec_t *v, vec_t *w) {
   return v->x * w->x + v->y * w->y + v->z * w->z;
 }
 
 /* 内積 引数形式が異なる版 */
-float veciprod2 (vec *v, float w0, float w1, float w2) {
+float veciprod2 (vec_t *v, float w0, float w1, float w2) {
     return v->x * w0 + v->y * w1 + v->z * w2;
 }
 
 /* 別なベクトルの定数倍を加算 */
-void vecaccum (vec *dest, float scale, vec *v) {
+void vecaccum (vec_t *dest, float scale, vec_t *v) {
   dest->x += scale * v->x;
   dest->y += scale * v->y;
   dest->z += scale * v->z;
 }
 
 /* ベクトルの和 */
-void vecadd (vec *dest, vec *v) {
+void vecadd (vec_t *dest, vec_t *v) {
   dest->x += v->x;
   dest->y += v->y;
   dest->z += v->z;
 }
 
 /* ベクトル要素同士の積 */
-void vecmul (vec *dest, vec *v) {
+void vecmul (vec_t *dest, vec_t *v) {
   dest->x *= v->x;
   dest->y *= v->y;
   dest->z *= v->z;
 }
 
 /* ベクトルを定数倍 */
-void vecscale (vec *dest, float scale) {
+void vecscale (vec_t *dest, float scale) {
   dest->x *= scale;
   dest->y *= scale;
   dest->z *= scale;
 }
 
 /* 他の２ベクトルの要素同士の積を計算し加算 */
-void vecaccumv (vec *dest, vec *v,  vec *w) {
+void vecaccumv (vec_t *dest, vec_t *v,  vec_t *w) {
   dest->x += v->x * w->x;
   dest->y += v->y * w->y;
   dest->z += v->z * w->z;
@@ -215,104 +211,104 @@ void vecaccumv (vec *dest, vec *v,  vec *w) {
 *****************************************************************************/
 
 /* テクスチャ種 0:無し 1:市松模様 2:縞模様 3:同心円模様 4:斑点*/
-int o_texturetype (obj *m) {
+int o_texturetype (obj_t *m) {
   return m->tex;
 }
 
 /* 物体の形状 0:直方体 1:平面 2:二次曲面 3:円錐 */
-int o_form (obj *m) {
+int o_form (obj_t *m) {
   return m->shape;
 }
 
 
 
 /* 反射特性 0:拡散反射のみ 1:拡散＋非完全鏡面反射 2:拡散＋完全鏡面反射 */
-int o_reflectiontype (obj *m) {
+int o_reflectiontype (obj_t *m) {
   return m->surface;
 }
 
 /* 曲面の外側が真かどうかのフラグ true:外側が真 false:内側が真 */
-bool o_isinvert (obj *m) {
+bool o_isinvert (obj_t *m) {
   return m->invert;
 }
 
 /* 回転の有無 true:回転あり false:回転無し 2次曲面と円錐のみ有効 */
-bool o_isrot (obj *m) {
+bool o_isrot (obj_t *m) {
   return m->isrot;
 }
 
 /* 物体形状の aパラメータ */
-float o_param_a (obj *m) {
+float o_param_a (obj_t *m) {
   return m->abc.x;
 }
 
 /* 物体形状の bパラメータ */
-float o_param_b (obj *m) {
+float o_param_b (obj_t *m) {
   return m->abc.y;
 }
 
 /* 物体形状の cパラメータ */
-float o_param_c (obj *m) {
+float o_param_c (obj_t *m) {
   return m->abc.z;
 }
 
 /* 物体形状の abcパラメータ */
-vec* o_param_abc (obj *m) {
+vec_t* o_param_abc (obj_t *m) {
   return &m->abc;
 }
 
 /* 物体の中心x座標 */
-float o_param_x (obj *m) {
+float o_param_x (obj_t *m) {
   return m->xyz.x;
 }
 
 /* 物体の中心y座標 */
-float o_param_y (obj *m) {
+float o_param_y (obj_t *m) {
   return m->xyz.y;
 }
 
 /* 物体の中心z座標 */
-float o_param_z (obj *m) {
+float o_param_z (obj_t *m) {
   return m->xyz.z;
 }
 
 /* 物体の拡散反射率 0.0 -- 1.0 */
-float o_diffuse (obj *m) {
+float o_diffuse (obj_t *m) {
   return m->surfparams.x;
 }
 
 /* 物体の不完全鏡面反射率 0.0 -- 1.0 */
-float o_hilight (obj *m) {
+float o_hilight (obj_t *m) {
   return m->surfparams.y;
 }
 
 /* 物体色の R成分 */
-float o_coler_red (obj *m) {
+float o_coler_red (obj_t *m) {
   return m->color.x;
 }
 
 /* 物体色の G成分 */
-float o_coler_green (obj *m) {
+float o_coler_green (obj_t *m) {
   return m->color.y;
 }
 
 /* 物体色の B成分 */
-float o_coler_blue (obj *m) {
+float o_coler_blue (obj_t *m) {
   return m->color.z;
 }
 
 /* 物体の曲面方程式の y*z項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r1 (obj *m) {
+float o_param_r1 (obj_t *m) {
   return m->rot123.x;
 }
 
 /* 物体の曲面方程式の x*z項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r2 (obj *m) {
+float o_param_r2 (obj_t *m) {
   return m->rot123.y;
 }
 
 /* 物体の曲面方程式の x*y項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r3 (obj *m) {
+float o_param_r3 (obj_t *m) {
   return m->rot123.z;
 }
 
@@ -324,7 +320,7 @@ float o_param_r3 (obj *m) {
    平面→ abcベクトルとの内積
    二次曲面、円錐→二次方程式の定数項
 */
-vec4* o_param_ctbl (obj *m) {
+vec4_t *o_param_ctbl (obj_t *m) {
   return &m->ctbl;
 }
 
@@ -333,33 +329,33 @@ vec4* o_param_ctbl (obj *m) {
 *****************************************************************************/
 
 /* 直接光追跡で得られたピクセルのRGB値 */
-int p_rgb (pixel *pixel) {
+int p_rgb (pixel_t *pixel) {
   return pixel->rgb;
 }
 
 /* 飛ばした光が物体と衝突した点の配列 */
-list p_intersection_points (pixel *pixel) {
+list_t p_intersection_points (pixel_t *pixel) {
   return pixel->isect_ps;
 }
 
 /* 飛ばした光が衝突した物体面番号の配列 */
 /* 物体面番号は オブジェクト番号 * 4 + (solverの返り値) */
-list p_surface_ids (pixel *pixel) {
+list_t p_surface_ids (pixel_t *pixel) {
   return pixel->sids;
 }
 
 /* 間接受光を計算するか否かのフラグ */
-int p_calc_diffuse (pixel *pixel) {
+int p_calc_diffuse (pixel_t *pixel) {
   return pixel->cdif;
 }
 
 /* 衝突点の間接受光エネルギーがピクセル輝度に与える寄与の大きさ */
-float p_energy (pixel *pixel) {
+float p_energy (pixel_t*pixel) {
   return pixel->engy;
 }
 
 /* 衝突点の間接受光エネルギーを光線本数を1/5に間引きして計算した値 */
-float p_received_ray_20percent (pixel *pixel) {
+float p_received_ray_20percent (pixel_t *pixel) {
   return pixel->r20p;
 }
 
@@ -373,17 +369,17 @@ float p_received_ray_20percent (pixel *pixel) {
    1 2 3 4 0 1 2 3 4 0
 */
 
-int p_group_id (pixel *pixel) {
+int p_group_id (pixel_t *pixel) {
   return pixel->gid;
 }
 
 /* グループIDをセットするアクセス関数 */
-void p_set_group_id (pixel *pixel, int id) {
+void p_set_group_id (pixel_t *pixel, int id) {
   pixel->gid = id;
 }
 
 /* 各衝突点における法線ベクトル */
-vec* p_nvectors (pixel *pixel) {
+vec_t* p_nvectors (pixel_t *pixel) {
   return &(pixel->nvectors);
 }
 
@@ -392,12 +388,12 @@ vec* p_nvectors (pixel *pixel) {
 *****************************************************************************/
 
 /* ベクトル */
-vec* d_vec (dvec *d) {
+vec_t* d_vec (dvec_t *d) {
   return &(d->vec);
 }
 
 /* 各オブジェクトに対して作った solver 高速化用定数テーブル */
-int d_const (dvec *d) {
+int d_const (dvec_t *d) {
   return d->cnst;
 }
 
@@ -411,7 +407,7 @@ int r_surface_id (refl *r) {
 }
 
 /* 光源光の反射方向ベクトル(光と逆向き) */
-dvec* r_dvec (refl *r) {
+dvec_t* r_dvec (refl *r) {
   return &(r->dv);
 }
 
@@ -432,15 +428,19 @@ float rad (float x) {
 /**** 環境データの読み込み ****/
 
 void read_screen_settings (void) {
+  float v1, cos_v1, sin_v1;
+  float v2, cos_v2, sin_v2;
   screen.x = read_float();
   screen.y = read_float();
   screen.z = read_float();
-  float v1 = rad(read_float());
-  float cos_v1 = cos(v1);
-  float sin_v1 = sin(v1);
-  float v2 = rad(read_float());
-  float cos_v2 = cos(v2);
-  float sin_v2 = sin(v2);
+
+  v1 = rad(read_float());
+  v2 = rad(read_float());
+  cos_v1 = cos(v1);
+  sin_v1 = sin(v1);
+  cos_v2 = cos(v2);
+  sin_v2 = sin(v2);
+
   screenz_dir.x = cos_v1 * sin_v2 * 200.0;
   screenz_dir.y = sin_v1 * (-200.0);
   screenz_dir.z = cos_v1 * cos_v2 * 200.0;
@@ -457,20 +457,20 @@ void read_screen_settings (void) {
 
 
 void read_light(void) {
-  int nl = radread_int();
+  int nl = read_int();
   float l1 = rad(read_float());
   float sl1 = sin(l1);
-  light.y = - sl1;
   float l2 = rad(read_float());
   float cl1 = cos(l1);
   float sl2 = sin(l2);
-  light.x = cl1 * sl2;
   float cl2 = cos(l2);
+  light.y = - sl1;
+  light.x = cl1 * sl2;
   light.z = cl1 * cl2;
   beam.x = read_float();
 }
 
-void rotate_quadratic_matrix(vec *abc, vec *rot) {
+void rotate_quadratic_matrix(vec_t *abc, vec_t *rot) {
 /* 回転行列の積 R(z)R(y)R(x) を計算する */
   float cos_x = cos(rot->x);
   float sin_x = sin(rot->x);
@@ -517,42 +517,44 @@ bool read_nth_object(int n) {
     int form = read_int ();
     int refltype = read_int ();
     int isrot_p = read_int () ;
+    vec_t abc;
+    vec_t xyz;
+    int m_invert;
+    vec_t reflparam;
+    vec_t color;
+    vec_t rotation;
 
-    vec abc;
     abc.x = read_float ();
     abc.y = read_float ();
     abc.z = read_float ();
 
-    vec xyz;
+
     xyz.x = read_float ();
     xyz.y = read_float ();
     xyz.z = read_float ();
 
-    int m_invert = fisneg (read_float ());
+    m_invert = fisneg (read_float ());
 
-    vec reflparam;
     reflparam.x = read_float (); /* diffuse */
     reflparam.y = read_float (); /* hilight */
 
-    vec color;
     color.x = read_float ();
     color.y = read_float ();
     color.z = read_float (); /* 15 */
 
-    vec rotation;
     if (isrot_p != 0) {
-	 rotation.x = rad (read_float ());
-	 rotation.y = rad (read_float ());
-	 rotation.z = rad (read_float ());
+      rotation.x = rad (read_float ());
+      rotation.y = rad (read_float ());
+      rotation.z = rad (read_float ());
     }
 
     /* パラメータの正規化 */
 
     /* 注: 下記正規化 (form = 2) 参照 */
-    bool m_invert2 = form == 2 ? True : m_invert;
-    vec4 ctbl;
+    bool m_invert2 = form == 2 ? true : m_invert;
+    vec4_t ctbl;
     /* ここからあとは abc と rotation しか操作しない。*/
-    obj obj_m =
+    obj_t obj_m =
       {texture, form, refltype, isrot_p,
        abc, xyz, /* x-z */
        m_invert2,
@@ -564,28 +566,28 @@ bool read_nth_object(int n) {
       objects[n] = obj_m;
 
       if (form == 3) {
-	/* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
-	float a = abc.x;
-	abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
-	float b = abc.y;
-	abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
-	float c = abc.z;
-	abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c);  /* Z^2 成分 */
+  /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
+  float a = abc.x;
+  abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
+  float b = abc.y;
+  abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
+  float c = abc.z;
+  abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c);  /* Z^2 成分 */
       }
       else if (form == 2) {
-	/* 平面: 法線ベクトルを正規化, 極性を負に統一 */
-	vecunit_sgn(&abc, not(m_invert));
+  /* 平面: 法線ベクトルを正規化, 極性を負に統一 */
+  vecunit_sgn(&abc, not(m_invert));
       }
 
       /* 2次形式行列に回転変換を施す */
       if (isrot_p != 0) {
-	rotate_quadratic_matrix(&abc, &rotation);
+  rotate_quadratic_matrix(&abc, &rotation);
       }
 
-      return True;
+      return true;
   }
   else {
-    return False; /* データの終了 */
+    return false; /* データの終了 */
   }
 }
 
@@ -672,26 +674,26 @@ void read_parameter() {
 
 /* 直方体の指定された面に衝突するかどうか判定する */
 /* i0 : 面に垂直な軸のindex X:0, Y:1, Z:2         i2,i3は他の2軸のindex */
-bool solver_rect_surface(obj *m, vec *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
+bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
   float *dirvec_arr = (float *) dirvec;
   if (dirvec_arr[i0] == 0.0) {
-    return False;
+    return false;
   } else {
-    vec *abc = o_param_abc(m);
+    vec_t *abc = o_param_abc(m);
     float *abc_arr = (float *) abc;
     float d = fneg_cond(xor(o_isinvert(m), fisneg(dirvec_arr[i0])), abc_arr[i0]);
 
     float d2 = (d - b0) / dirvec_arr[i0];
     if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
       if ((fabs(d2 * dirvec_arr[i2] + b2)) < abc_arr[i2]) {
-	solver_dist = d2;
-	return True;
+  solver_dist = d2;
+  return true;
       }else {
-	return False;
+  return false;
       }
     }
     else {
-      return False;
+      return false;
     }
   }
 }
@@ -699,7 +701,7 @@ bool solver_rect_surface(obj *m, vec *dirvec, float b0, float b1, float b2, int 
 
 
 /***** 直方体オブジェクトの場合 ****/
-int solver_rect (obj *m, vec *dirvec, float b0, float b1, float b2) {
+int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
   if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
       return 1;   /* YZ 平面 */
   } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
@@ -713,10 +715,10 @@ int solver_rect (obj *m, vec *dirvec, float b0, float b1, float b2) {
 
 
 /* 平面オブジェクトの場合 */
-int solver_surface(obj *m, vec *dirvec, float b0, float b1, float b2) {
+int solver_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
   /* 点と平面の符号つき距離 */
   /* 平面は極性が負に統一されている */
-  vec *abc = o_param_abc(m);
+  vec_t *abc = o_param_abc(m);
   float d = veciprod(dirvec, abc);
   if (d > 0.0) {
     solver_dist = fneg(veciprod2(abc, b0, b1, b2)) / d;
@@ -728,7 +730,7 @@ int solver_surface(obj *m, vec *dirvec, float b0, float b1, float b2) {
 
 /* 3変数2次形式 v^t A v を計算 */
 /* 回転が無い場合は対角部分のみ計算すれば良い */
-float quadratic(obj *m, float v0, float v1, float v2) {
+float quadratic(obj_t *m, float v0, float v1, float v2) {
   float diag_part =
     fsqr(v0) * o_param_a(m) + fsqr(v1) * o_param_b(m) + fsqr(v2) * o_param_c(m);
   if (o_isrot(m) == 0) {
@@ -743,7 +745,7 @@ float quadratic(obj *m, float v0, float v1, float v2) {
 
 /* 3変数双1次形式 v^t A w を計算 */
 /* 回転が無い場合は A の対角部分のみ計算すれば良い */
-float bilinear(obj *m, float v0, float v1, float v2, float w0, float w1, float w2) {
+float bilinear(obj_t *m, float v0, float v1, float v2, float w0, float w1, float w2) {
   float diag_part =
     v0 * w0 * o_param_a(m)
     + v1 * w1 * o_param_b(m)
@@ -765,7 +767,7 @@ float bilinear(obj *m, float v0, float v1, float v2, float w0, float w1, float w
    展開すると (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
    (base^t A base) - (0か1) = 0 、よってtに関する2次方程式を解けば良い。*/
 
-int solver_second(obj *m, vec *dirvec, float b0, float b1, float b2) {
+int solver_second(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
   /* 解の公式 (-b' ± sqrt(b'^2 - a*c)) / a  を使用(b' = b/2) */
   /* a = dirvec^t A dirvec */
   float aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
@@ -794,8 +796,8 @@ int solver_second(obj *m, vec *dirvec, float b0, float b1, float b2) {
 }
 
 /**** solver のメインルーチン ****/
-int solver(int index, vec *dirvec, vec *org) {
-  obj *m = &objects[index];
+int solver(int index, vec_t *dirvec, vec_t *org) {
+  obj_t *m = &objects[index];
   /* 直線の始点を物体の基準位置に合わせて平行移動 */
   float b0 =  org->x - o_param_x(m);
   float b1 =  org->y - o_param_y(m);
@@ -830,23 +832,23 @@ int solver(int index, vec *dirvec, vec *org) {
 */
 
 /***** solver_rectのdirvecテーブル使用高速版 ******/
-bool solver_rect_fast(obj *m, vec *v, float *dconst, float b0, float b1, float b2) {
+bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, float b2) {
   float d0 = (dconst[0] - b0) * dconst[1];
   bool tmp0;
   /* YZ平面との衝突判定 */
-  if (fabs (d0 * v->y + b1) < o_param_b(m)) { 
+  if (fabs (d0 * v->y + b1) < o_param_b(m)) {
     if (fabs (d0 * v->z + b2) < o_param_c(m)) {
       tmp0 = dconst[1] != 0.0;
     }
     else {
-      tmp0 = False;
+      tmp0 = false;
     }
   }
-  else tmp0 = False;
-  if (tmp0 != False) {
+  else tmp0 = false;
+  if (tmp0 != false) {
     solver_dist = d0;
     return 1;
-  } 
+  }
   float d1 = (dconst[2] - b1) * dconst[3];
   bool tmp_zx;
   /* ZX平面との衝突判定 */
@@ -854,11 +856,11 @@ bool solver_rect_fast(obj *m, vec *v, float *dconst, float b0, float b1, float b
     if (fabs (d1 * v->z + b2) < o_param_c(m)) {
       tmp_zx = dconst[3] != 0.0;
     } else {
-      tmp_zx = False;
+      tmp_zx = false;
     }
   }
-  else tmp_zx = False;
-  if (tmp_zx != False) {
+  else tmp_zx = false;
+  if (tmp_zx != false) {
     solver_dist =- d1;
     return 2;
   }
@@ -869,13 +871,12 @@ bool solver_rect_fast(obj *m, vec *v, float *dconst, float b0, float b1, float b
     if (fabs (d2 * v->y + b1) < o_param_b(m)) {
       tmp_xy = dconst[5] != 0.0;
     }
-    else tmp_xy = False;
+    else tmp_xy = false;
   }
-  else tmp_xy = False;
-  if (tmp_xy != False) {
+  else tmp_xy = false;
+  if (tmp_xy != false) {
     solver_dist = d2;
     return 3;
   }
   return 0;
 }
-
