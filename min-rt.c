@@ -13,6 +13,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include "runtime.h"
 
 typedef struct l {
@@ -57,11 +58,17 @@ typedef struct {
   int   sid;
   dvec_t  dv;
   float br;
-} refl;
+} refl_t;
+
+void copy_obj(obj_t *dst, obj_t *src) {
+  memcpy(dst, src, sizeof(obj_t));
+}
+
+
 
 /*
   global variables
- */
+*/
 
 vec_t screen;
 vec_t screenx_dir, screeny_dir, screenz_dir;
@@ -168,7 +175,7 @@ float veciprod (vec_t *v, vec_t *w) {
 
 /* 内積 引数形式が異なる版 */
 float veciprod2 (vec_t *v, float w0, float w1, float w2) {
-    return v->x * w0 + v->y * w1 + v->z * w2;
+  return v->x * w0 + v->y * w1 + v->z * w2;
 }
 
 /* 別なベクトルの定数倍を加算 */
@@ -314,11 +321,11 @@ float o_param_r3 (obj_t *m) {
 
 /* 光線の発射点をあらかじめ計算した場合の定数テーブル */
 /*
-   0 -- 2 番目の要素: 物体の固有座標系に平行移動した光線始点
-   3番目の要素:
-   直方体→無効
-   平面→ abcベクトルとの内積
-   二次曲面、円錐→二次方程式の定数項
+  0 -- 2 番目の要素: 物体の固有座標系に平行移動した光線始点
+  3番目の要素:
+  直方体→無効
+  平面→ abcベクトルとの内積
+  二次曲面、円錐→二次方程式の定数項
 */
 vec4_t *o_param_ctbl (obj_t *m) {
   return &m->ctbl;
@@ -361,12 +368,12 @@ float p_received_ray_20percent (pixel_t *pixel) {
 
 /* このピクセルのグループ ID */
 /*
-   スクリーン座標 (x,y)の点のグループIDを (x+2*y) mod 5 と定める
-   結果、下図のような分け方になり、各点は上下左右4点と別なグループになる
-   0 1 2 3 4 0 1 2 3 4
-   2 3 4 0 1 2 3 4 0 1
-   4 0 1 2 3 4 0 1 2 3
-   1 2 3 4 0 1 2 3 4 0
+  スクリーン座標 (x,y)の点のグループIDを (x+2*y) mod 5 と定める
+  結果、下図のような分け方になり、各点は上下左右4点と別なグループになる
+  0 1 2 3 4 0 1 2 3 4
+  2 3 4 0 1 2 3 4 0 1
+  4 0 1 2 3 4 0 1 2 3
+  1 2 3 4 0 1 2 3 4 0
 */
 
 int p_group_id (pixel_t *pixel) {
@@ -402,17 +409,17 @@ int d_const (dvec_t *d) {
 *****************************************************************************/
 
 /* 面番号 オブジェクト番号*4 + (solverの返り値) */
-int r_surface_id (refl *r) {
+int r_surface_id (refl_t *r) {
   return r->sid;
 }
 
 /* 光源光の反射方向ベクトル(光と逆向き) */
-dvec_t* r_dvec (refl *r) {
+dvec_t* r_dvec (refl_t *r) {
   return &(r->dv);
 }
 
 /* 物体の反射率 */
-float r_bright (refl *r) {
+float r_bright (refl_t *r) {
   return r->br;
 }
 
@@ -471,7 +478,7 @@ void read_light(void) {
 }
 
 void rotate_quadratic_matrix(vec_t *abc, vec_t *rot) {
-/* 回転行列の積 R(z)R(y)R(x) を計算する */
+  /* 回転行列の積 R(z)R(y)R(x) を計算する */
   float cos_x = cos(rot->x);
   float sin_x = sin(rot->x);
   float cos_y = cos(rot->y);
@@ -524,6 +531,9 @@ bool read_nth_object(int n) {
     vec_t color;
     vec_t rotation;
 
+    bool m_invert2;
+    vec4_t ctbl;
+
     abc.x = read_float ();
     abc.y = read_float ();
     abc.z = read_float ();
@@ -551,42 +561,41 @@ bool read_nth_object(int n) {
     /* パラメータの正規化 */
 
     /* 注: 下記正規化 (form = 2) 参照 */
-    bool m_invert2 = form == 2 ? true : m_invert;
-    vec4_t ctbl;
-    /* ここからあとは abc と rotation しか操作しない。*/
-    obj_t obj_m =
-      {texture, form, refltype, isrot_p,
-       abc, xyz, /* x-z */
-       m_invert2,
-       reflparam, /* reflection paramater */
-       color, /* color */
-       rotation, /* rotation */
-       ctbl /* constant table */
-      };
-      objects[n] = obj_m;
+    m_invert2 = form == 2 ? true : m_invert;
+    {
+      /* ここからあとは abc と rotation しか操作しない。*/
+      obj_t obj_m =
+        {texture, form, refltype, isrot_p,
+         abc, xyz, /* x-z */
+         m_invert2,
+         reflparam, /* reflection paramater */
+         color, /* color */
+         rotation, /* rotation */
+         ctbl /* constant table */
+        };
+      copy_obj(&objects[n], &obj_m);
+    }
+    if (form == 3) {
+      /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
 
-      if (form == 3) {
-  /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
-  float a = abc.x;
-  abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
-  float b = abc.y;
-  abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
-  float c = abc.z;
-  abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c);  /* Z^2 成分 */
-      }
-      else if (form == 2) {
-  /* 平面: 法線ベクトルを正規化, 極性を負に統一 */
-  vecunit_sgn(&abc, not(m_invert));
-      }
+      float a = abc.x;
+      float b = abc.y;
+      float c = abc.z;
+      abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
+      abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
+      abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c); /* Z^2 成分 */
+    } else if (form == 2) {
+      /* 平面: 法線ベクトルを正規化, 極性を負に統一 */
+      vecunit_sgn(&abc, !m_invert);
+    }
 
-      /* 2次形式行列に回転変換を施す */
-      if (isrot_p != 0) {
-  rotate_quadratic_matrix(&abc, &rotation);
-      }
+    /* 2次形式行列に回転変換を施す */
+    if (isrot_p != 0) {
+      rotate_quadratic_matrix(&abc, &rotation);
+    }
 
-      return true;
-  }
-  else {
+    return true;
+  } else {
     return false; /* データの終了 */
   }
 }
@@ -686,10 +695,10 @@ bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, 
     float d2 = (d - b0) / dirvec_arr[i0];
     if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
       if ((fabs(d2 * dirvec_arr[i2] + b2)) < abc_arr[i2]) {
-  solver_dist = d2;
-  return true;
+        solver_dist = d2;
+        return true;
       }else {
-  return false;
+        return false;
       }
     }
     else {
@@ -703,7 +712,7 @@ bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, 
 /***** 直方体オブジェクトの場合 ****/
 int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
   if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
-      return 1;   /* YZ 平面 */
+    return 1;   /* YZ 平面 */
   } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
     return 2;   /* ZX 平面 */
   } else if (solver_rect_surface(m, dirvec, b2, b0, b1, 2, 0, 1)) {
@@ -817,24 +826,29 @@ int solver(int index, vec_t *dirvec, vec_t *org) {
    solverのテーブル使用高速版
 *****************************************************************************/
 /*
-   通常版solver と同様、直線 start + t * dirvec と物体の交点を t の値として返す
-   t の値は solver_distに格納
+  通常版solver と同様、直線 start + t * dirvec と物体の交点を t の値として返す
+  t の値は solver_distに格納
 
-   solver_fast は、直線の方向ベクトル dirvec について作ったテーブルを使用
-   内部的に solver_rect_fast, solver_surface_fast, solver_second_fastを呼ぶ
+  solver_fast は、直線の方向ベクトル dirvec について作ったテーブルを使用
+  内部的に solver_rect_fast, solver_surface_fast, solver_second_fastを呼ぶ
 
-   solver_fast2 は、dirvecと直線の始点 start それぞれに作ったテーブルを使用
-   直方体についてはstartのテーブルによる高速化はできないので、solver_fastと
-   同じく solver_rect_fastを内部的に呼ぶ。それ以外の物体については
-   solver_surface_fast2またはsolver_second_fast2を内部的に呼ぶ
+  solver_fast2 は、dirvecと直線の始点 start それぞれに作ったテーブルを使用
+  直方体についてはstartのテーブルによる高速化はできないので、solver_fastと
+  同じく solver_rect_fastを内部的に呼ぶ。それ以外の物体については
+  solver_surface_fast2またはsolver_second_fast2を内部的に呼ぶ
 
-   変数dconstは方向ベクトル、sconstは始点に関するテーブル
+  変数dconstは方向ベクトル、sconstは始点に関するテーブル
 */
 
 /***** solver_rectのdirvecテーブル使用高速版 ******/
 bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, float b2) {
   float d0 = (dconst[0] - b0) * dconst[1];
   bool tmp0;
+  float d1 = (dconst[2] - b1) * dconst[3];
+  bool tmp_zx;
+  float d2 = (dconst[4] - b2) * dconst[5];
+  bool tmp_xy;
+
   /* YZ平面との衝突判定 */
   if (fabs (d0 * v->y + b1) < o_param_b(m)) {
     if (fabs (d0 * v->z + b2) < o_param_c(m)) {
@@ -849,8 +863,7 @@ bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, flo
     solver_dist = d0;
     return 1;
   }
-  float d1 = (dconst[2] - b1) * dconst[3];
-  bool tmp_zx;
+
   /* ZX平面との衝突判定 */
   if (fabs (d1 * v->x + b0) < o_param_a(m)) {
     if (fabs (d1 * v->z + b2) < o_param_c(m)) {
@@ -861,11 +874,10 @@ bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, flo
   }
   else tmp_zx = false;
   if (tmp_zx != false) {
-    solver_dist =- d1;
+    solver_dist = d1;
     return 2;
   }
-  float d2 = (dconst[4] - b2) * dconst[5];
-  bool tmp_xy;
+
   /* XY平面との衝突判定 */
   if (fabs (d2 * v->x + b0) < o_param_a(m)) {
     if (fabs (d2 * v->y + b1) < o_param_b(m)) {
