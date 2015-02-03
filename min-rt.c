@@ -64,6 +64,12 @@ void copy_obj(obj_t *dst, obj_t *src) {
   memcpy(dst, src, sizeof(obj_t));
 }
 
+void copy_vec(vec_t *dst, vec_t *src) {
+  memcpy(dst, src, sizeof(vec_t));
+}
+void copy_vec4(vec4_t *dst, vec4_t *src) {
+  memcpy(dst, src, sizeof(vec4_t));
+}
 
 
 /*
@@ -341,14 +347,14 @@ int p_rgb (pixel_t *pixel) {
 }
 
 /* 飛ばした光が物体と衝突した点の配列 */
-list_t p_intersection_points (pixel_t *pixel) {
-  return pixel->isect_ps;
+list_t *p_intersection_points (pixel_t *pixel) {
+  return &pixel->isect_ps;
 }
 
 /* 飛ばした光が衝突した物体面番号の配列 */
 /* 物体面番号は オブジェクト番号 * 4 + (solverの返り値) */
-list_t p_surface_ids (pixel_t *pixel) {
-  return pixel->sids;
+list_t *p_surface_ids (pixel_t *pixel) {
+  return &pixel->sids;
 }
 
 /* 間接受光を計算するか否かのフラグ */
@@ -562,19 +568,27 @@ bool read_nth_object(int n) {
 
     /* 注: 下記正規化 (form = 2) 参照 */
     m_invert2 = form == 2 ? true : m_invert;
+
     {
+
       /* ここからあとは abc と rotation しか操作しない。*/
-      obj_t obj_m =
-        {texture, form, refltype, isrot_p,
-         abc, xyz, /* x-z */
-         m_invert2,
-         reflparam, /* reflection paramater */
-         color, /* color */
-         rotation, /* rotation */
-         ctbl /* constant table */
-        };
-      copy_obj(&objects[n], &obj_m);
+      objects[n].tex     = texture;
+      objects[n].shape   = form;
+      objects[n].surface = refltype;
+      objects[n].isrot   = isrot_p;
+
+      copy_vec(&objects[n].abc,    &abc);
+      copy_vec(&objects[n].xyz,    &xyz);
+
+      objects[n].invert  = m_invert2;
+
+      copy_vec(&objects[n].surfparams, &reflparam); /* reflection paramater */
+      copy_vec(&objects[n].color,  &color);
+      copy_vec(&objects[n].rot123, &rotation);
+
+      copy_vec4(&objects[n].ctbl,  &ctbl);
     }
+
     if (form == 3) {
       /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
 
