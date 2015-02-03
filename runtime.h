@@ -1,25 +1,14 @@
-int fispos(float x) {
-  return x > 0.0;
-}
+#ifndef RUNTIME_H
+#define RUNTIME_H
+int fispos(float);
+int fisneg(float);
+int fiszero(float);
+float fhalf(float);
+float fsqr (float);
 
-int fisneg (float x) {
-  return x < 0.0;
-}
+#define fabs(x) ((x)<0.0?-(x):(x))
+#define fneg(x) (-(x))
 
-int fiszero (float x) {
-  return x == 0.0;
-}
-
-float fhalf (float x) {
-  return x * 0.5;
-}
-
-float fsqr (float x) {
-  return x * x;
-}
-
-float fabs  (float);
-float fneg  (float);
 float sqrt  (float);
 float floor (float);
 
@@ -31,3 +20,6 @@ float sin (float);
 float atan(float);
 
 float read_float();
+int   read_int();
+
+#endif

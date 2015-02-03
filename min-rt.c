@@ -690,7 +690,7 @@ bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, 
   } else {
     vec_t *abc = o_param_abc(m);
     float *abc_arr = (float *) abc;
-    float d = fneg_cond(xor(o_isinvert(m), fisneg(dirvec_arr[i0])), abc_arr[i0]);
+    float d = fneg_cond(o_isinvert(m) ^ fisneg(dirvec_arr[i0]), abc_arr[i0]);
 
     float d2 = (d - b0) / dirvec_arr[i0];
     if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
