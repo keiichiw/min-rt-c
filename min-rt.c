@@ -89,6 +89,8 @@ int **or_net; // or_net is an array of length 1 in min-rt.ml
 
 float solver_dist; // an array of length 1 in min-rt.ml
 
+vec_t startp_fast;
+
 /******************************************************************************
    ユーティリティー
 *****************************************************************************/
@@ -1014,4 +1016,142 @@ int solver_fast2(int index, dvec_t *dirvec) {
   } else {
     return solver_second_fast2(m, dconst, sconst, b0, b1, b2);
   }
+}
+
+/******************************************************************************
+   方向ベクトルの定数テーブルを計算する関数群
+*****************************************************************************/
+
+/* 直方体オブジェクトに対する前処理 */
+float* setup_rect_table(vec_t *vec, obj_t *m) {
+  float *consts = (float*)malloc(6 * sizeof(float));
+
+  if (fiszero(vec->x)) { /* YZ平面 */
+    consts[1] = 0.0;
+  } else {
+    /* 面の X 座標 */
+    consts[0] = fneg_cond(o_isinvert(m)^fisneg(vec->x), o_param_a(m));
+    /* 方向ベクトルを何倍すればX方向に1進むか */
+    consts[1] = 1.0 / vec->x;
+  }
+  if (fiszero(vec->y)) { /* ZX平面 : YZ平面と同様*/
+    consts[3] = 0.0;
+  } else {
+    consts[2] = fneg_cond(o_isinvert(m)^fisneg(vec->y), o_param_b(m));
+    consts[3] = 1.0 / vec->y;
+  }
+  if (fiszero(vec->z)) { /* XY平面 : YZ平面と同様*/
+    consts[5] = 0.0;
+  } else {
+    consts[4] = fneg_cond(o_isinvert(m)^fisneg(vec->z), o_param_c(m));
+    consts[5] = 1.0 / vec->z;
+  }
+  return consts;
+}
+
+/* 平面オブジェクトに対する前処理 */
+float* setup_surface_table(vec_t *vec, obj_t *m) {
+  float *consts = (float*)malloc(4 * sizeof(float));
+  float d = vec->x * o_param_a(m) + vec->y * o_param_b(m) + vec->z * o_param_c(m);
+  if (fispos(d)) {
+    /* 方向ベクトルを何倍すれば平面の垂直方向に 1 進むか */
+    consts[0] = -1.0 / d;
+    /* ある点の平面からの距離が方向ベクトル何個分かを導く3次一形式の係数 */
+    consts[1] = fneg(o_param_a(m) / d);
+    consts[2] = fneg(o_param_b(m) / d);
+    consts[3] = fneg(o_param_c(m) / d);
+  } else {
+    consts[0] = 0;
+    consts[1] = 0;
+    consts[2] = 0;
+    consts[3] = 0;
+  }
+  return consts;
+}
+
+
+/* 2次曲面に対する前処理 */
+float* setup_second_table(vec_t *v, obj_t *m) {
+  float *consts = malloc(5 * sizeof(float));
+  float aa = quadratic(m, v->x, v->y, v->z);
+  float c1 = fneg(v->x * o_param_a(m));
+  float c2 = fneg(v->y * o_param_b(m));
+  float c3 = fneg(v->z * o_param_c(m));
+
+  consts[0] = aa;  /* 2次方程式の a 係数 */
+
+  /* b' = dirvec^t A start だが、(dirvec^t A)の部分を計算しconst.(1:3)に格納。
+     b' を求めるにはこのベクトルとstartの内積を取れば良い。符号は逆にする */
+  if (o_isrot(m) != 0) {
+    consts[1] = c1 - fhalf(v->z * o_param_r2(m) + v->y * o_param_r3(m));
+    consts[2] = c2 - fhalf(v->z * o_param_r1(m) + v->x * o_param_r3(m));
+    consts[3] = c3 - fhalf(v->y * o_param_r1(m) + v->x * o_param_r2(m));
+  } else {
+    consts[1] = c1;
+    consts[2] = c2;
+    consts[3] = c3;
+  }
+
+  if (!fiszero(aa)) {
+    consts[4] = 1.0 / aa; /* a係数の逆数を求め、解の公式での割り算を消去 */
+  } else {
+    consts[4] = 0.0;
+  }
+
+  return consts;
+}
+
+
+/* 各オブジェクトについて補助関数を呼んでテーブルを作る */
+void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
+  if (index >= 0) {
+    obj_t *m = &objects[index];
+    float **dconst = d_const(dirvec);
+    vec_t *v = d_vec(dirvec);
+    int m_shape = o_form(m);
+
+    if (m_shape == 1) { /* rect */
+      dconst[index] = setup_rect_table(v, m);
+    } else if (m_shape == 2) { /* surface */
+      dconst[index] = setup_surface_table(v, m);
+    } else { /* second */
+      dconst[index] = setup_second_table(v, m);
+    }
+
+    iter_setup_dirvec_constants(dirvec, index-1);
+  }
+}
+
+void setup_dirvec_constants(dvec_t *dirvec) {
+  iter_setup_dirvec_constants(dirvec, n_objects - 1);
+}
+
+/******************************************************************************
+   直線の始点に関するテーブルを各オブジェクトに対して計算する関数群
+*****************************************************************************/
+
+void setup_startp_constants(vec_t *p, int index) {
+  if (index >= 0) {
+    obj_t *obj = &objects[index];
+    vec4_t *sconst = o_param_ctbl(obj);
+    int m_shape = o_form(obj);
+
+    sconst->x = p->x - o_param_x(obj);
+    sconst->y = p->y - o_param_y(obj);
+    sconst->z = p->z - o_param_z(obj);
+
+    if (m_shape == 2) { /* surface */
+      sconst->w = veciprod2(o_param_abc(obj), sconst->x, sconst->y, sconst->z);
+    } else if (m_shape > 2) { /* second */
+      float cc0 = quadratic(obj, sconst->x, sconst->y, sconst->z);
+      sconst->w = (m_shape == 3 ? cc0 - 1.0 : cc0);
+    }
+
+    setup_startp_constants(p, index - 1);
+  }
+}
+
+void setup_startp(vec_t *p) {
+  veccpy(&startp_fast, p);
+  setup_startp_constants(p, n_objects - 1);
 }
