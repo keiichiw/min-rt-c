@@ -51,7 +51,7 @@ typedef struct {
 
 typedef struct {
   vec_t   vec;
-  int   cnst;
+  float  *cnst[60];
 } dvec_t;
 
 typedef struct {
@@ -177,6 +177,11 @@ void vecunit_sgn (vec_t *v, int inv) {
 /* 内積 */
 float veciprod (vec_t *v, vec_t *w) {
   return v->x * w->x + v->y * w->y + v->z * w->z;
+}
+
+/* 内積 */
+float veciprod_d (dvec_t *v, vec_t *w) {
+  return v->vec.x * w->x + v->vec.y * w->y + v->vec.z * w->z;
 }
 
 /* 内積 引数形式が異なる版 */
@@ -406,7 +411,7 @@ vec_t* d_vec (dvec_t *d) {
 }
 
 /* 各オブジェクトに対して作った solver 高速化用定数テーブル */
-int d_const (dvec_t *d) {
+float** d_const (dvec_t *d) {
   return d->cnst;
 }
 
@@ -697,7 +702,7 @@ void read_parameter() {
 
 /* 直方体の指定された面に衝突するかどうか判定する */
 /* i0 : 面に垂直な軸のindex X:0, Y:1, Z:2         i2,i3は他の2軸のindex */
-bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
+bool solver_rect_surface(obj_t *m, dvec_t *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
   float *dirvec_arr = (float *) dirvec;
   if (dirvec_arr[i0] == 0.0) {
     return false;
@@ -724,7 +729,7 @@ bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, 
 
 
 /***** 直方体オブジェクトの場合 ****/
-int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_rect (obj_t *m, dvec_t *dirvec, float b0, float b1, float b2) {
   if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
     return 1;   /* YZ 平面 */
   } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
@@ -738,11 +743,11 @@ int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
 
 
 /* 平面オブジェクトの場合 */
-int solver_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_surface(obj_t *m, dvec_t *dirvec, float b0, float b1, float b2) {
   /* 点と平面の符号つき距離 */
   /* 平面は極性が負に統一されている */
   vec_t *abc = o_param_abc(m);
-  float d = veciprod(dirvec, abc);
+  float d = veciprod_d(dirvec, abc);
   if (d > 0.0) {
     solver_dist = fneg(veciprod2(abc, b0, b1, b2)) / d;
     return 1;
@@ -790,10 +795,10 @@ float bilinear(obj_t *m, float v0, float v1, float v2, float w0, float w1, float
    展開すると (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
    (base^t A base) - (0か1) = 0 、よってtに関する2次方程式を解けば良い。*/
 
-int solver_second(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_second(obj_t *m, dvec_t *dirvec, float b0, float b1, float b2) {
   /* 解の公式 (-b' ± sqrt(b'^2 - a*c)) / a  を使用(b' = b/2) */
   /* a = dirvec^t A dirvec */
-  float aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
+  float aa = quadratic(m, dirvec->vec.x, dirvec->vec.y, dirvec->vec.z);
 
   if (aa == 0.0) {
     return 0; /* 正確にはこの場合も1次方程式の解があるが、無視しても通常は大丈夫 */
@@ -819,7 +824,7 @@ int solver_second(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
 }
 
 /**** solver のメインルーチン ****/
-int solver(int index, vec_t *dirvec, vec_t *org) {
+int solver(int index, dvec_t *dirvec, vec_t *org) {
   obj_t *m = &objects[index];
   /* 直線の始点を物体の基準位置に合わせて平行移動 */
   float b0 =  org->x - o_param_x(m);
@@ -905,4 +910,108 @@ bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, flo
     return 3;
   }
   return 0;
+}
+
+
+/**** solver_surfaceのdirvecテーブル使用高速版 ******/
+int solver_surface_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
+  if (fisneg(dconst[0])) {
+    solver_dist = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+
+/**** solver_second のdirvecテーブル使用高速版 ******/
+int solver_second_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
+  float aa = dconst[0];
+  if (fiszero(aa)) {
+    return 0;
+  } else {
+    float neg_bb = dconst[1] * b0 + dconst[1] * b1 + dconst[3] * b2;
+    float cc0 = quadratic(m, b0, b1, b2);
+    float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
+    float d = fsqr(neg_bb) - aa * cc;
+    if (fispos(d)) {
+      if (o_isinvert(m)) {
+        solver_dist = (neg_bb + sqrt(d)) * dconst[4];
+      } else {
+        solver_dist = (neg_bb - sqrt(d)) * dconst[4];
+      }
+    } else {
+      return 0;
+    }
+  }
+}
+
+/**** solver のdirvecテーブル使用高速版 *******/
+int solver_fast(int index, dvec_t *dirvec, vec_t *org) {
+  obj_t *m = &objects[index];
+  float b0 = org->x - o_param_x(m);
+  float b1 = org->y - o_param_y(m);
+  float b2 = org->z - o_param_z(m);
+  float **dconsts = d_const(dirvec);
+  float  *dconst  = dconsts[index];
+  int m_shape = o_form(m);
+  if (m_shape == 1) {
+    return solver_rect_fast(m, d_vec(dirvec), dconst, b0, b1, b2);
+  } else if (m_shape == 2) {
+    return solver_surface_fast(m, dconst, b0, b1, b2);
+  } else {
+    return solver_second_fast(m, dconst, b0, b1, b2);
+  }
+}
+
+
+/* solver_surfaceのdirvec+startテーブル使用高速版 */
+int solver_surface_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, float b1, float b2) {
+  if (fisneg(dconst[0])) {
+    solver_dist = dconst[0] * sconst->w;
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+/* solver_secondのdirvec+startテーブル使用高速版 */
+int solver_second_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, float b1, float b2) {
+  float aa = dconst[0];
+  if (fiszero(aa)) {
+    return 0;
+  } else {
+    float neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
+    float cc = sconst->w;
+    float d = fsqr(neg_bb) - aa * cc;
+    if (fispos(d)) {
+      if (o_isinvert(m)) {
+        solver_dist = (neg_bb + sqrt(d)) * dconst[4];
+      } else {
+        solver_dist = (neg_bb - sqrt(d)) * dconst[4];
+      }
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+}
+
+/* solverの、dirvec+startテーブル使用高速版 */
+int solver_fast2(int index, dvec_t *dirvec) {
+  obj_t *m = &objects[index];
+  vec4_t *sconst = o_param_ctbl(m);
+  float b0 = sconst->x;
+  float b1 = sconst->y;
+  float b2 = sconst->z;
+  float **dconsts = d_const(dirvec);
+  float  *dconst  = dconsts[index];
+  int m_shape = o_form(m);
+  if (m_shape == 1) {
+    return solver_rect_fast(m, d_vec(dirvec), dconst, b0, b1, b2);
+  } else if (m_shape == 2) {
+    return solver_surface_fast2(m, dconst, sconst, b0, b1, b2);
+  } else {
+    return solver_second_fast2(m, dconst, sconst, b0, b1, b2);
+  }
 }

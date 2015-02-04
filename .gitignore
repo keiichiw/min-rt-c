@@ -2,3 +2,7 @@
 *.s
 *.o
 *.out
+origin/*.cmi
+origin/*.cmx
+origin/min-rt
+origin/sld/
