@@ -1,3 +1,4 @@
+open Printf
 (****************************************************************)
 (*                                                              *)
 (* Ray Tracing Program for (Mini) Objective Caml                *)
@@ -938,6 +939,8 @@ let rec solver_fast index dirvec org =
   let dconsts = d_const dirvec in
   let dconst = dconsts.(index) in
   let m_shape = o_form m in
+  Format.eprintf "hoge: %d" (Array.length dconsts);
+  (*Format.eprintf "hoge: %d" (Array.length dconst*)
   if m_shape = 1 then
     solver_rect_fast m (d_vec dirvec) dconst b0 b1 b2
   else if m_shape = 2 then
