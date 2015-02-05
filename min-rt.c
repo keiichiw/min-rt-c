@@ -89,7 +89,9 @@ int **or_net; // or_net is an array of length 1 in min-rt.ml
 
 float solver_dist; // an array of length 1 in min-rt.ml
 
-vec_t startp_fast;
+vec_t  startp_fast;
+dvec_t light_dirvec;
+vec_t intersection_point;
 
 /******************************************************************************
    ユーティリティー
@@ -1154,4 +1156,147 @@ void setup_startp_constants(vec_t *p, int index) {
 void setup_startp(vec_t *p) {
   veccpy(&startp_fast, p);
   setup_startp_constants(p, n_objects - 1);
+}
+
+/******************************************************************************
+   与えられた点がオブジェクトに含まれるかどうかを判定する関数群
+*****************************************************************************/
+
+/**** 点 q がオブジェクト m の外部かどうかを判定する ****/
+
+/* 直方体 */
+bool is_rect_outside(obj_t *m, float p0, float p1, float p2) {
+  bool b0 = fabs(p0) < o_param_a(m);
+  bool b1 = fabs(p1) < o_param_b(m);
+  bool b2 = fabs(p2) < o_param_c(m);
+  if(b0 && b1 && b2){
+    return o_isinvert(m);
+  } else {
+    return !o_isinvert(m);
+  }
+}
+
+/* 平面 */
+bool is_plane_outside(obj_t *m, float p0, float p1, float p2) {
+  float w = veciprod2(o_param_abc(m), p0, p1, p2);
+  return !(o_isinvert(m) ^ fisneg(w));
+}
+
+/* 2次曲面 */
+bool is_second_outside(obj_t *m, float p0, float p1, float p2) {
+  float w  = quadratic(m, p0, p1, p2);
+  float w2 = (o_form(m) == 3 ? w - 1.0 : w);
+  return !(o_isinvert(m) ^ fisneg(w2));
+}
+
+/* 物体の中心座標に平行移動した上で、適切な補助関数を呼ぶ */
+bool is_outside(obj_t *m, float q0, float q1, float q2) {
+  float p0 = q0 - o_param_x(m);
+  float p1 = q1 - o_param_y(m);
+  float p2 = q2 - o_param_z(m);
+  int m_shape = o_form(m);
+  if (m_shape == 1) {
+    return is_rect_outside(m, p0, p1, p2);
+  } else if (m_shape == 2) {
+    return is_plane_outside(m, p0, p1, p2);
+  } else {
+    return is_second_outside(m, p0, p1, p2);
+  }
+}
+
+bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
+  int head = iand[ofs];
+  if (head == -1) {
+    return true;
+  } else {
+    if (is_outside(&objects[head], q0, q1, q2)) {
+      return false;
+    } else {
+      return check_all_inside(ofs+1, iand, q0, q1, q2);
+    }
+  }
+}
+
+
+/******************************************************************************
+   衝突点が他の物体の影に入っているか否かを判定する関数群
+*****************************************************************************/
+
+/* 点 intersection_point から、光線ベクトルの方向に辿り、   */
+/* 物体にぶつかる (=影にはいっている) か否かを判定する。*/
+
+/**** AND ネットワーク iand の影内かどうかの判定 ****/
+bool shadow_check_and_group(int iand_ofs, int *and_group) {
+  if (and_group[iand_ofs] == -1) {
+    return false;
+  } else {
+    int obj   = and_group[iand_ofs];
+    float t0  = solver_fast(obj, &light_dirvec, &intersection_point);
+    float t0p = solver_dist;
+    if (t0 != 0 && t0p < -0.2) {
+      /* Q: 交点の候補。実際にすべてのオブジェクトに */
+      /* 入っているかどうかを調べる。*/
+      float t  = t0p + 0.01;
+      float q0 = light.x * t + intersection_point.x;
+      float q1 = light.y * t + intersection_point.y;
+      float q2 = light.z * t + intersection_point.z;
+      if (check_all_inside(0, and_group, q0, q1, q2)) {
+        return true;
+      } else {
+        /* 次のオブジェクトから候補点を探す */
+        return shadow_check_and_group(iand_ofs + 1, and_group);
+      }
+    } else {
+      /* 交点がない場合: 極性が正(内側が真)の場合、    */
+      /* AND ネットの共通部分はその内部に含まれるため、*/
+      /* 交点はないことは自明。探索を打ち切る。        */
+      if (o_isinvert(&objects[obj])) {
+        return shadow_check_and_group((iand_ofs + 1), and_group);
+      } else {
+        return false;
+      }
+    }
+  }
+}
+
+/**** OR グループ or_group の影かどうかの判定 ****/
+bool shadow_check_one_or_group(int ofs, int *or_group) {
+  int head = or_group[ofs];
+  if (head == -1) {
+    return false;
+  } else {
+    int *and_group = and_net[head];
+    bool shadow_p = shadow_check_and_group(0, and_group);
+    if (shadow_p) {
+      return true;
+    } else {
+      return shadow_check_one_or_group(ofs + 1, or_group);
+    }
+  }
+}
+
+/**** OR グループの列のどれかの影に入っているかどうかの判定 ****/
+bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
+  int *head = or_matrix[ofs];
+  int range_primitive = head[0];
+  if (range_primitive == -1) { /* OR行列の終了マーク */
+    return false;
+  } else {
+    /* range primitive が無いか、またはrange_primitiveと交わる事を確認 */
+    bool no_rp = range_primitive == 99;  /* range primitive が無い */
+    int t = solver_fast(range_primitive, &light_dirvec, &intersection_point);
+    /* range primitive とぶつからなければ */
+    /* or group との交点はない            */
+    bool cross = (t != 0) && solver_dist < -0.1 && shadow_check_one_or_group(1, head);
+
+    if (no_rp || cross) {
+      if (shadow_check_one_or_group(1, head)) {
+        return true; /* 交点があるので、影に入る事が判明。探索終了 */
+      } else {
+        return shadow_check_one_or_matrix(ofs + 1, or_matrix); /* 次の要素を試す */
+      }
+    } else {
+      return shadow_check_one_or_matrix(ofs + 1, or_matrix); /* 次の要素を試す */
+    }
+  }
 }
