@@ -1,90 +1,90 @@
 open MiniMLRuntime;;
 
-(**************** ¥°¥í¡¼¥Ğ¥ëÊÑ¿ô¤ÎÀë¸À ****************)
+(**************** ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã®å®£è¨€ ****************)
 
-(* ¥ª¥Ö¥¸¥§¥¯¥È¤Î¸Ä¿ô *)
+(* ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å€‹æ•° *)
 let n_objects = create_array 1 0
 
-(* ¥ª¥Ö¥¸¥§¥¯¥È¤Î¥Ç¡¼¥¿¤òÆş¤ì¤ë¥Ù¥¯¥È¥ë¡ÊºÇÂç60¸Ä¡Ë*)
-let objects = 
+(* ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ‡ãƒ¼ã‚¿ã‚’å…¥ã‚Œã‚‹ãƒ™ã‚¯ãƒˆãƒ«ï¼ˆæœ€å¤§60å€‹ï¼‰*)
+let objects =
   let dummy = create_array 0 0.0 in
   create_array 60 (0, 0, 0, 0, dummy, dummy, false, dummy, dummy, dummy, dummy)
 
-(* Screen ¤ÎÃæ¿´ºÂÉ¸ *)
+(* Screen ã®ä¸­å¿ƒåº§æ¨™ *)
 let screen = create_array 3 0.0
-(* »ëÅÀ¤ÎºÂÉ¸ *)
+(* è¦–ç‚¹ã®åº§æ¨™ *)
 let viewpoint = create_array 3 0.0
-(* ¸÷¸»Êı¸ş¥Ù¥¯¥È¥ë (Ã±°Ì¥Ù¥¯¥È¥ë) *)
+(* å…‰æºæ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« (å˜ä½ãƒ™ã‚¯ãƒˆãƒ«) *)
 let light = create_array 3 0.0
-(* ¶ÀÌÌ¥Ï¥¤¥é¥¤¥È¶¯ÅÙ (É¸½à=255) *)
+(* é¡é¢ãƒã‚¤ãƒ©ã‚¤ãƒˆå¼·åº¦ (æ¨™æº–=255) *)
 let beam = create_array 1 255.0
-(* AND ¥Í¥Ã¥È¥ï¡¼¥¯¤òÊİ»ı *)
+(* AND ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚’ä¿æŒ *)
 let and_net = create_array 50 (create_array 1 (-1))
-(* OR ¥Í¥Ã¥È¥ï¡¼¥¯¤òÊİ»ı *)
+(* OR ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚’ä¿æŒ *)
 let or_net = create_array 1 (create_array 1 (and_net.(0)))
 
-(* °Ê²¼¡¢¸òº¹È½Äê¥ë¡¼¥Á¥ó¤ÎÊÖ¤êÃÍ³ÊÇ¼ÍÑ *)
-(* solver ¤Î¸òÅÀ ¤Î t ¤ÎÃÍ *)
+(* ä»¥ä¸‹ã€äº¤å·®åˆ¤å®šãƒ«ãƒ¼ãƒãƒ³ã®è¿”ã‚Šå€¤æ ¼ç´ç”¨ *)
+(* solver ã®äº¤ç‚¹ ã® t ã®å€¤ *)
 let solver_dist = create_array 1 0.0
-(* ¸òÅÀ¤ÎÄ¾ÊıÂÎÉ½ÌÌ¤Ç¤ÎÊı¸ş *)
+(* äº¤ç‚¹ã®ç›´æ–¹ä½“è¡¨é¢ã§ã®æ–¹å‘ *)
 let intsec_rectside = create_array 1 0
-(* È¯¸«¤·¤¿¸òÅÀ¤ÎºÇ¾®¤Î t *)
+(* ç™ºè¦‹ã—ãŸäº¤ç‚¹ã®æœ€å°ã® t *)
 let tmin = create_array 1 (1000000000.0)
-(* ¸òÅÀ¤ÎºÂÉ¸ *)
+(* äº¤ç‚¹ã®åº§æ¨™ *)
 let intersection_point = create_array 3 0.0
-(* ¾×ÆÍ¤·¤¿¥ª¥Ö¥¸¥§¥¯¥ÈÈÖ¹æ *)
+(* è¡çªã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç•ªå· *)
 let intersected_object_id = create_array 1 0
-(* Ë¡Àş¥Ù¥¯¥È¥ë *)
+(* æ³•ç·šãƒ™ã‚¯ãƒˆãƒ« *)
 let nvector = create_array 3 0.0
-(* ¸òÅÀ¤Î¿§ *)
+(* äº¤ç‚¹ã®è‰² *)
 let texture_color = create_array 3 0.0
 
-(* ·×»»Ãæ¤Î´ÖÀÜ¼õ¸÷¶¯ÅÙ¤òÊİ»ı *)
+(* è¨ˆç®—ä¸­ã®é–“æ¥å—å…‰å¼·åº¦ã‚’ä¿æŒ *)
 let diffuse_ray = create_array 3 0.0
-(* ¥¹¥¯¥ê¡¼¥ó¾å¤ÎÅÀ¤ÎÌÀ¤ë¤µ *)
+(* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ä¸Šã®ç‚¹ã®æ˜ã‚‹ã• *)
 let rgb = create_array 3 0.0
 
-(* ²èÁü¥µ¥¤¥º *)
+(* ç”»åƒã‚µã‚¤ã‚º *)
 let image_size = create_array 2 0
-(* ²èÁü¤ÎÃæ¿´ = ²èÁü¥µ¥¤¥º¤ÎÈ¾Ê¬ *)
+(* ç”»åƒã®ä¸­å¿ƒ = ç”»åƒã‚µã‚¤ã‚ºã®åŠåˆ† *)
 let image_center = create_array 2 0
-(* 3¼¡¸µ¾å¤Î¥Ô¥¯¥»¥ë´Ö³Ö *)
+(* 3æ¬¡å…ƒä¸Šã®ãƒ”ã‚¯ã‚»ãƒ«é–“éš” *)
 let scan_pitch = create_array 1 0.0
 
-(* judge_intersection¤ËÍ¿¤¨¤ë¸÷Àş»ÏÅÀ *)
+(* judge_intersectionã«ä¸ãˆã‚‹å…‰ç·šå§‹ç‚¹ *)
 let startp = create_array 3 0.0
-(* judge_intersection_fast¤ËÍ¿¤¨¤ë¸÷Àş»ÏÅÀ *)
+(* judge_intersection_fastã«ä¸ãˆã‚‹å…‰ç·šå§‹ç‚¹ *)
 let startp_fast = create_array 3 0.0
 
-(* ²èÌÌ¾å¤Îx,y,z¼´¤Î3¼¡¸µ¶õ´Ö¾å¤ÎÊı¸ş *)
+(* ç”»é¢ä¸Šã®x,y,zè»¸ã®3æ¬¡å…ƒç©ºé–“ä¸Šã®æ–¹å‘ *)
 let screenx_dir = create_array 3 0.0
 let screeny_dir = create_array 3 0.0
 let screenz_dir = create_array 3 0.0
 
-(* Ä¾ÀÜ¸÷ÄÉÀ×¤Ç»È¤¦¸÷Êı¸ş¥Ù¥¯¥È¥ë *)
+(* ç›´æ¥å…‰è¿½è·¡ã§ä½¿ã†å…‰æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« *)
 let ptrace_dirvec  = create_array 3 0.0
 
-(* ´ÖÀÜ¸÷¥µ¥ó¥×¥ê¥ó¥°¤Ë»È¤¦Êı¸ş¥Ù¥¯¥È¥ë *)
-let dirvecs = 
+(* é–“æ¥å…‰ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã«ä½¿ã†æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« *)
+let dirvecs =
   let dummyf = create_array 0 0.0 in
   let dummyff = create_array 0 dummyf in
   let dummy_vs = create_array 0 (dummyf, dummyff) in
   create_array 5 dummy_vs
 
-(* ¸÷¸»¸÷¤ÎÁ°½èÍıºÑ¤ßÊı¸ş¥Ù¥¯¥È¥ë *)
+(* å…‰æºå…‰ã®å‰å‡¦ç†æ¸ˆã¿æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« *)
 let light_dirvec =
   let dummyf2 = create_array 0 0.0 in
   let v3 = create_array 3 0.0 in
   let consts = create_array 60 dummyf2 in
   (v3, consts)
 
-(* ¶ÀÊ¿ÌÌ¤ÎÈ¿¼Í¾ğÊó *)
+(* é¡å¹³é¢ã®åå°„æƒ…å ± *)
 let reflections =
   let dummyf3 = create_array 0 0.0 in
   let dummyff3 = create_array 0 dummyf3 in
   let dummydv = (dummyf3, dummyff3) in
   create_array 180 (0, dummydv, 0.0)
 
-(* reflections¤ÎÍ­¸ú¤ÊÍ×ÁÇ¿ô *) 
+(* reflectionsã®æœ‰åŠ¹ãªè¦ç´ æ•° *)
 
 let n_reflections = create_array 1 0

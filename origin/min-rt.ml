@@ -17,17 +17,17 @@ open Printf
 (*MINCAML*) let rec xor x y = if x then not y else y in
 
 (******************************************************************************
-   ¥æ¡¼¥Æ¥£¥ê¥Æ¥£¡¼
+   ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼
  *****************************************************************************)
 
-(* Éä¹æ *)
+(* ç¬¦å· *)
 let rec sgn x =
   if fiszero x then 0.0
   else if fispos x then 1.0
   else -1.0
 in
 
-(* ¾ò·ïÉÕ¤­Éä¹æÈ¿Å¾ *)
+(* æ¡ä»¶ä»˜ãç¬¦å·åè»¢ *)
 let rec fneg_cond cond x =
   if cond then x else fneg x
 in
@@ -39,7 +39,7 @@ let rec add_mod5 x y =
 in
 
 (******************************************************************************
-   ¥Ù¥¯¥È¥ëÁàºî¤Î¤¿¤á¤Î¥×¥ê¥ß¥Æ¥£¥Ö
+   ãƒ™ã‚¯ãƒˆãƒ«æ“ä½œã®ãŸã‚ã®ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–
  *****************************************************************************)
 
 (*
@@ -48,38 +48,38 @@ let rec vecprint v =
 in
 *)
 
-(* ÃÍÂåÆş *)
+(* å€¤ä»£å…¥ *)
 let rec vecset v x y z =
   v.(0) <- x;
   v.(1) <- y;
   v.(2) <- z
 in
 
-(* Æ±¤¸ÃÍ¤ÇËä¤á¤ë *)
+(* åŒã˜å€¤ã§åŸ‹ã‚ã‚‹ *)
 let rec vecfill v elem =
   v.(0) <- elem;
   v.(1) <- elem;
   v.(2) <- elem
 in
 
-(* Îí½é´ü²½ *)
+(* é›¶åˆæœŸåŒ– *)
 let rec vecbzero v =
   vecfill v 0.0
 in
 
-(* ¥³¥Ô¡¼ *)
+(* ã‚³ãƒ”ãƒ¼ *)
 let rec veccpy dest src =
   dest.(0) <- src.(0);
   dest.(1) <- src.(1);
   dest.(2) <- src.(2)
 in
 
-(* µ÷Î¥¤Î¼«¾è *)
+(* è·é›¢ã®è‡ªä¹— *)
 let rec vecdist2 p q =
   fsqr (p.(0) -. q.(0)) +. fsqr (p.(1) -. q.(1)) +. fsqr (p.(2) -. q.(2))
 in
 
-(* Àµµ¬²½ ¥¼¥í³ä¤ê¥Á¥§¥Ã¥¯Ìµ¤· *)
+(* æ­£è¦åŒ– ã‚¼ãƒ­å‰²ã‚Šãƒã‚§ãƒƒã‚¯ç„¡ã— *)
 let rec vecunit v =
   let il = 1.0 /. sqrt(fsqr v.(0) +. fsqr v.(1) +. fsqr v.(2)) in
   v.(0) <- v.(0) *. il;
@@ -87,7 +87,7 @@ let rec vecunit v =
   v.(2) <- v.(2) *. il
 in
 
-(* Éä¹æÉÕÀµµ¬²½ ¥¼¥í³ä¥Á¥§¥Ã¥¯*)
+(* ç¬¦å·ä»˜æ­£è¦åŒ– ã‚¼ãƒ­å‰²ãƒã‚§ãƒƒã‚¯*)
 let rec vecunit_sgn v inv =
   let l = sqrt (fsqr v.(0) +. fsqr v.(1) +. fsqr v.(2)) in
   let il = if fiszero l then 1.0 else if inv then -1.0 /. l else 1.0 /. l in
@@ -96,45 +96,45 @@ let rec vecunit_sgn v inv =
   v.(2) <- v.(2) *. il
 in
 
-(* ÆâÀÑ *)
+(* å†…ç© *)
 let rec veciprod v w =
   v.(0) *. w.(0) +. v.(1) *. w.(1) +. v.(2) *. w.(2)
 in
 
-(* ÆâÀÑ °ú¿ô·Á¼°¤¬°Û¤Ê¤ëÈÇ *)
+(* å†…ç© å¼•æ•°å½¢å¼ãŒç•°ãªã‚‹ç‰ˆ *)
 let rec veciprod2 v w0 w1 w2 =
   v.(0) *. w0 +. v.(1) *. w1 +. v.(2) *. w2
 in
 
-(* ÊÌ¤Ê¥Ù¥¯¥È¥ë¤ÎÄê¿ôÇÜ¤ò²Ã»» *)
+(* åˆ¥ãªãƒ™ã‚¯ãƒˆãƒ«ã®å®šæ•°å€ã‚’åŠ ç®— *)
 let rec vecaccum dest scale v =
   dest.(0) <- dest.(0) +. scale *. v.(0);
   dest.(1) <- dest.(1) +. scale *. v.(1);
   dest.(2) <- dest.(2) +. scale *. v.(2)
 in
 
-(* ¥Ù¥¯¥È¥ë¤ÎÏÂ *)
+(* ãƒ™ã‚¯ãƒˆãƒ«ã®å’Œ *)
 let rec vecadd dest v =
   dest.(0) <- dest.(0) +. v.(0);
   dest.(1) <- dest.(1) +. v.(1);
   dest.(2) <- dest.(2) +. v.(2)
 in
 
-(* ¥Ù¥¯¥È¥ëÍ×ÁÇÆ±»Î¤ÎÀÑ *)
+(* ãƒ™ã‚¯ãƒˆãƒ«è¦ç´ åŒå£«ã®ç© *)
 let rec vecmul dest v =
   dest.(0) <- dest.(0) *. v.(0);
   dest.(1) <- dest.(1) *. v.(1);
   dest.(2) <- dest.(2) *. v.(2)
 in
 
-(* ¥Ù¥¯¥È¥ë¤òÄê¿ôÇÜ *)
+(* ãƒ™ã‚¯ãƒˆãƒ«ã‚’å®šæ•°å€ *)
 let rec vecscale dest scale =
   dest.(0) <- dest.(0) *. scale;
   dest.(1) <- dest.(1) *. scale;
   dest.(2) <- dest.(2) *. scale
 in
 
-(* Â¾¤Î£²¥Ù¥¯¥È¥ë¤ÎÍ×ÁÇÆ±»Î¤ÎÀÑ¤ò·×»»¤·²Ã»» *)
+(* ä»–ã®ï¼’ãƒ™ã‚¯ãƒˆãƒ«ã®è¦ç´ åŒå£«ã®ç©ã‚’è¨ˆç®—ã—åŠ ç®— *)
 let rec vecaccumv dest v w =
   dest.(0) <- dest.(0) +. v.(0) *. w.(0);
   dest.(1) <- dest.(1) +. v.(1) *. w.(1);
@@ -142,10 +142,10 @@ let rec vecaccumv dest v w =
 in
 
 (******************************************************************************
-   ¥ª¥Ö¥¸¥§¥¯¥È¥Ç¡¼¥¿¹½Â¤¤Ø¤Î¥¢¥¯¥»¥¹´Ø¿ô
+   ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ‡ãƒ¼ã‚¿æ§‹é€ ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹é–¢æ•°
  *****************************************************************************)
 
-(* ¥Æ¥¯¥¹¥Á¥ã¼ï 0:Ìµ¤· 1:»Ô¾¾ÌÏÍÍ 2:¼ÊÌÏÍÍ 3:Æ±¿´±ßÌÏÍÍ 4:ÈÃÅÀ*)
+(* ãƒ†ã‚¯ã‚¹ãƒãƒ£ç¨® 0:ç„¡ã— 1:å¸‚æ¾æ¨¡æ§˜ 2:ç¸æ¨¡æ§˜ 3:åŒå¿ƒå††æ¨¡æ§˜ 4:æ–‘ç‚¹*)
 let rec o_texturetype m =
   let (m_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -155,7 +155,7 @@ let rec o_texturetype m =
   m_tex
 in
 
-(* ÊªÂÎ¤Î·Á¾õ 0:Ä¾ÊıÂÎ 1:Ê¿ÌÌ 2:Æó¼¡¶ÊÌÌ 3:±ß¿í *)
+(* ç‰©ä½“ã®å½¢çŠ¶ 0:ç›´æ–¹ä½“ 1:å¹³é¢ 2:äºŒæ¬¡æ›²é¢ 3:å††éŒ *)
 let rec o_form m =
   let (xm_tex, m_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -165,7 +165,7 @@ let rec o_form m =
   m_shape
 in
 
-(* È¿¼ÍÆÃÀ­ 0:³È»¶È¿¼Í¤Î¤ß 1:³È»¶¡ÜÈó´°Á´¶ÀÌÌÈ¿¼Í 2:³È»¶¡Ü´°Á´¶ÀÌÌÈ¿¼Í *)
+(* åå°„ç‰¹æ€§ 0:æ‹¡æ•£åå°„ã®ã¿ 1:æ‹¡æ•£ï¼‹éå®Œå…¨é¡é¢åå°„ 2:æ‹¡æ•£ï¼‹å®Œå…¨é¡é¢åå°„ *)
 let rec o_reflectiontype m =
   let (xm_tex, xm_shape, m_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -175,7 +175,7 @@ let rec o_reflectiontype m =
   m_surface
 in
 
-(* ¶ÊÌÌ¤Î³°Â¦¤¬¿¿¤«¤É¤¦¤«¤Î¥Õ¥é¥° true:³°Â¦¤¬¿¿ false:ÆâÂ¦¤¬¿¿ *)
+(* æ›²é¢ã®å¤–å´ãŒçœŸã‹ã©ã†ã‹ã®ãƒ•ãƒ©ã‚° true:å¤–å´ãŒçœŸ false:å†…å´ãŒçœŸ *)
 let rec o_isinvert m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -184,7 +184,7 @@ let rec o_isinvert m =
   m_invert
 in
 
-(* ²óÅ¾¤ÎÍ­Ìµ true:²óÅ¾¤¢¤ê false:²óÅ¾Ìµ¤· 2¼¡¶ÊÌÌ¤È±ß¿í¤Î¤ßÍ­¸ú *)
+(* å›è»¢ã®æœ‰ç„¡ true:å›è»¢ã‚ã‚Š false:å›è»¢ç„¡ã— 2æ¬¡æ›²é¢ã¨å††éŒã®ã¿æœ‰åŠ¹ *)
 let rec o_isrot m =
   let (xm_tex, xm_shape, xm_surface, m_isrot,
        xm_abc, xm_xyz,
@@ -193,7 +193,7 @@ let rec o_isrot m =
   m_isrot
 in
 
-(* ÊªÂÎ·Á¾õ¤Î a¥Ñ¥é¥á¡¼¥¿ *)
+(* ç‰©ä½“å½¢çŠ¶ã® aãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ *)
 let rec o_param_a m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        m_abc, xm_xyz,
@@ -203,7 +203,7 @@ let rec o_param_a m =
   m_abc.(0)
 in
 
-(* ÊªÂÎ·Á¾õ¤Î b¥Ñ¥é¥á¡¼¥¿ *)
+(* ç‰©ä½“å½¢çŠ¶ã® bãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ *)
 let rec o_param_b m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        m_abc, xm_xyz,
@@ -213,7 +213,7 @@ let rec o_param_b m =
   m_abc.(1)
 in
 
-(* ÊªÂÎ·Á¾õ¤Î c¥Ñ¥é¥á¡¼¥¿ *)
+(* ç‰©ä½“å½¢çŠ¶ã® cãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ *)
 let rec o_param_c m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        m_abc, xm_xyz,
@@ -223,7 +223,7 @@ let rec o_param_c m =
   m_abc.(2)
 in
 
-(* ÊªÂÎ·Á¾õ¤Î abc¥Ñ¥é¥á¡¼¥¿ *)
+(* ç‰©ä½“å½¢çŠ¶ã® abcãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ *)
 let rec o_param_abc m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        m_abc, xm_xyz,
@@ -233,7 +233,7 @@ let rec o_param_abc m =
   m_abc
 in
 
-(* ÊªÂÎ¤ÎÃæ¿´xºÂÉ¸ *)
+(* ç‰©ä½“ã®ä¸­å¿ƒxåº§æ¨™ *)
 let rec o_param_x m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, m_xyz,
@@ -243,7 +243,7 @@ let rec o_param_x m =
   m_xyz.(0)
 in
 
-(* ÊªÂÎ¤ÎÃæ¿´yºÂÉ¸ *)
+(* ç‰©ä½“ã®ä¸­å¿ƒyåº§æ¨™ *)
 let rec o_param_y m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, m_xyz,
@@ -253,7 +253,7 @@ let rec o_param_y m =
   m_xyz.(1)
 in
 
-(* ÊªÂÎ¤ÎÃæ¿´zºÂÉ¸ *)
+(* ç‰©ä½“ã®ä¸­å¿ƒzåº§æ¨™ *)
 let rec o_param_z m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, m_xyz,
@@ -263,7 +263,7 @@ let rec o_param_z m =
   m_xyz.(2)
 in
 
-(* ÊªÂÎ¤Î³È»¶È¿¼ÍÎ¨ 0.0 -- 1.0 *)
+(* ç‰©ä½“ã®æ‹¡æ•£åå°„ç‡ 0.0 -- 1.0 *)
 let rec o_diffuse m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -273,7 +273,7 @@ let rec o_diffuse m =
   m_surfparams.(0)
 in
 
-(* ÊªÂÎ¤ÎÉÔ´°Á´¶ÀÌÌÈ¿¼ÍÎ¨ 0.0 -- 1.0 *)
+(* ç‰©ä½“ã®ä¸å®Œå…¨é¡é¢åå°„ç‡ 0.0 -- 1.0 *)
 let rec o_hilight m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -283,7 +283,7 @@ let rec o_hilight m =
   m_surfparams.(1)
 in
 
-(* ÊªÂÎ¿§¤Î RÀ®Ê¬ *)
+(* ç‰©ä½“è‰²ã® Ræˆåˆ† *)
 let rec o_color_red m =
   let (xm_tex, xm_shape, m_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -293,7 +293,7 @@ let rec o_color_red m =
   m_color.(0)
 in
 
-(* ÊªÂÎ¿§¤Î GÀ®Ê¬ *)
+(* ç‰©ä½“è‰²ã® Gæˆåˆ† *)
 let rec o_color_green m =
   let (xm_tex, xm_shape, m_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -303,7 +303,7 @@ let rec o_color_green m =
   m_color.(1)
 in
 
-(* ÊªÂÎ¿§¤Î BÀ®Ê¬ *)
+(* ç‰©ä½“è‰²ã® Bæˆåˆ† *)
 let rec o_color_blue m =
   let (xm_tex, xm_shape, m_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -313,7 +313,7 @@ let rec o_color_blue m =
   m_color.(2)
 in
 
-(* ÊªÂÎ¤Î¶ÊÌÌÊıÄø¼°¤Î y*z¹à¤Î·¸¿ô 2¼¡¶ÊÌÌ¤È±ß¿í¤Ç¡¢²óÅ¾¤¬¤¢¤ë¾ì¹ç¤Î¤ß *)
+(* ç‰©ä½“ã®æ›²é¢æ–¹ç¨‹å¼ã® y*zé …ã®ä¿‚æ•° 2æ¬¡æ›²é¢ã¨å††éŒã§ã€å›è»¢ãŒã‚ã‚‹å ´åˆã®ã¿ *)
 let rec o_param_r1 m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -323,7 +323,7 @@ let rec o_param_r1 m =
   m_rot123.(0)
 in
 
-(* ÊªÂÎ¤Î¶ÊÌÌÊıÄø¼°¤Î x*z¹à¤Î·¸¿ô 2¼¡¶ÊÌÌ¤È±ß¿í¤Ç¡¢²óÅ¾¤¬¤¢¤ë¾ì¹ç¤Î¤ß *)
+(* ç‰©ä½“ã®æ›²é¢æ–¹ç¨‹å¼ã® x*zé …ã®ä¿‚æ•° 2æ¬¡æ›²é¢ã¨å††éŒã§ã€å›è»¢ãŒã‚ã‚‹å ´åˆã®ã¿ *)
 let rec o_param_r2 m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -333,7 +333,7 @@ let rec o_param_r2 m =
   m_rot123.(1)
 in
 
-(* ÊªÂÎ¤Î¶ÊÌÌÊıÄø¼°¤Î x*y¹à¤Î·¸¿ô 2¼¡¶ÊÌÌ¤È±ß¿í¤Ç¡¢²óÅ¾¤¬¤¢¤ë¾ì¹ç¤Î¤ß *)
+(* ç‰©ä½“ã®æ›²é¢æ–¹ç¨‹å¼ã® x*yé …ã®ä¿‚æ•° 2æ¬¡æ›²é¢ã¨å††éŒã§ã€å›è»¢ãŒã‚ã‚‹å ´åˆã®ã¿ *)
 let rec o_param_r3 m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
        xm_abc, xm_xyz,
@@ -343,13 +343,13 @@ let rec o_param_r3 m =
   m_rot123.(2)
 in
 
-(* ¸÷Àş¤ÎÈ¯¼ÍÅÀ¤ò¤¢¤é¤«¤¸¤á·×»»¤·¤¿¾ì¹ç¤ÎÄê¿ô¥Æ¡¼¥Ö¥ë *)
+(* å…‰ç·šã®ç™ºå°„ç‚¹ã‚’ã‚ã‚‰ã‹ã˜ã‚è¨ˆç®—ã—ãŸå ´åˆã®å®šæ•°ãƒ†ãƒ¼ãƒ–ãƒ« *)
 (*
-   0 -- 2 ÈÖÌÜ¤ÎÍ×ÁÇ: ÊªÂÎ¤Î¸ÇÍ­ºÂÉ¸·Ï¤ËÊ¿¹Ô°ÜÆ°¤·¤¿¸÷Àş»ÏÅÀ
-   3ÈÖÌÜ¤ÎÍ×ÁÇ:
-   Ä¾ÊıÂÎ¢ªÌµ¸ú
-   Ê¿ÌÌ¢ª abc¥Ù¥¯¥È¥ë¤È¤ÎÆâÀÑ
-   Æó¼¡¶ÊÌÌ¡¢±ß¿í¢ªÆó¼¡ÊıÄø¼°¤ÎÄê¿ô¹à
+   0 -- 2 ç•ªç›®ã®è¦ç´ : ç‰©ä½“ã®å›ºæœ‰åº§æ¨™ç³»ã«å¹³è¡Œç§»å‹•ã—ãŸå…‰ç·šå§‹ç‚¹
+   3ç•ªç›®ã®è¦ç´ :
+   ç›´æ–¹ä½“â†’ç„¡åŠ¹
+   å¹³é¢â†’ abcãƒ™ã‚¯ãƒˆãƒ«ã¨ã®å†…ç©
+   äºŒæ¬¡æ›²é¢ã€å††éŒâ†’äºŒæ¬¡æ–¹ç¨‹å¼ã®å®šæ•°é …
  *)
 let rec o_param_ctbl m =
   let (xm_tex, xm_shape, xm_surface, xm_isrot,
@@ -361,56 +361,56 @@ let rec o_param_ctbl m =
 in
 
 (******************************************************************************
-   Pixel¥Ç¡¼¥¿¤Î¥á¥ó¥Ğ¥¢¥¯¥»¥¹´Ø¿ô·²
+   Pixelãƒ‡ãƒ¼ã‚¿ã®ãƒ¡ãƒ³ãƒã‚¢ã‚¯ã‚»ã‚¹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* Ä¾ÀÜ¸÷ÄÉÀ×¤ÇÆÀ¤é¤ì¤¿¥Ô¥¯¥»¥ë¤ÎRGBÃÍ *)
+(* ç›´æ¥å…‰è¿½è·¡ã§å¾—ã‚‰ã‚ŒãŸãƒ”ã‚¯ã‚»ãƒ«ã®RGBå€¤ *)
 let rec p_rgb pixel =
   let (m_rgb, xm_isect_ps, xm_sids, xm_cdif, xm_engy,
        xm_r20p, xm_gid, xm_nvectors ) = pixel in
   m_rgb
 in
 
-(* Èô¤Ğ¤·¤¿¸÷¤¬ÊªÂÎ¤È¾×ÆÍ¤·¤¿ÅÀ¤ÎÇÛÎó *)
+(* é£›ã°ã—ãŸå…‰ãŒç‰©ä½“ã¨è¡çªã—ãŸç‚¹ã®é…åˆ— *)
 let rec p_intersection_points pixel =
   let (xm_rgb, m_isect_ps, xm_sids, xm_cdif, xm_engy,
        xm_r20p, xm_gid, xm_nvectors ) = pixel in
   m_isect_ps
 in
 
-(* Èô¤Ğ¤·¤¿¸÷¤¬¾×ÆÍ¤·¤¿ÊªÂÎÌÌÈÖ¹æ¤ÎÇÛÎó *)
-(* ÊªÂÎÌÌÈÖ¹æ¤Ï ¥ª¥Ö¥¸¥§¥¯¥ÈÈÖ¹æ * 4 + (solver¤ÎÊÖ¤êÃÍ) *)
+(* é£›ã°ã—ãŸå…‰ãŒè¡çªã—ãŸç‰©ä½“é¢ç•ªå·ã®é…åˆ— *)
+(* ç‰©ä½“é¢ç•ªå·ã¯ ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç•ªå· * 4 + (solverã®è¿”ã‚Šå€¤) *)
 let rec p_surface_ids pixel =
   let (xm_rgb, xm_isect_ps, m_sids, xm_cdif, xm_engy,
        xm_r20p, xm_gid, xm_nvectors ) = pixel in
   m_sids
 in
 
-(* ´ÖÀÜ¼õ¸÷¤ò·×»»¤¹¤ë¤«Èİ¤«¤Î¥Õ¥é¥° *)
+(* é–“æ¥å—å…‰ã‚’è¨ˆç®—ã™ã‚‹ã‹å¦ã‹ã®ãƒ•ãƒ©ã‚° *)
 let rec p_calc_diffuse pixel =
   let (xm_rgb, xm_isect_ps, xm_sids, m_cdif, xm_engy,
        xm_r20p, xm_gid, xm_nvectors ) = pixel in
   m_cdif
 in
 
-(* ¾×ÆÍÅÀ¤Î´ÖÀÜ¼õ¸÷¥¨¥Í¥ë¥®¡¼¤¬¥Ô¥¯¥»¥ëµ±ÅÙ¤ËÍ¿¤¨¤ë´óÍ¿¤ÎÂç¤­¤µ *)
+(* è¡çªç‚¹ã®é–“æ¥å—å…‰ã‚¨ãƒãƒ«ã‚®ãƒ¼ãŒãƒ”ã‚¯ã‚»ãƒ«è¼åº¦ã«ä¸ãˆã‚‹å¯„ä¸ã®å¤§ãã• *)
 let rec p_energy pixel =
   let (xm_rgb, xm_isect_ps, xm_sids, xm_cdif, m_engy,
        xm_r20p, xm_gid, xm_nvectors ) = pixel in
   m_engy
 in
 
-(* ¾×ÆÍÅÀ¤Î´ÖÀÜ¼õ¸÷¥¨¥Í¥ë¥®¡¼¤ò¸÷ÀşËÜ¿ô¤ò1/5¤Ë´Ö°ú¤­¤·¤Æ·×»»¤·¤¿ÃÍ *)
+(* è¡çªç‚¹ã®é–“æ¥å—å…‰ã‚¨ãƒãƒ«ã‚®ãƒ¼ã‚’å…‰ç·šæœ¬æ•°ã‚’1/5ã«é–“å¼•ãã—ã¦è¨ˆç®—ã—ãŸå€¤ *)
 let rec p_received_ray_20percent pixel =
   let (xm_rgb, xm_isect_ps, xm_sids, xm_cdif, xm_engy,
        m_r20p, xm_gid, xm_nvectors ) = pixel in
   m_r20p
 in
 
-(* ¤³¤Î¥Ô¥¯¥»¥ë¤Î¥°¥ë¡¼¥× ID *)
+(* ã“ã®ãƒ”ã‚¯ã‚»ãƒ«ã®ã‚°ãƒ«ãƒ¼ãƒ— ID *)
 (*
-   ¥¹¥¯¥ê¡¼¥óºÂÉ¸ (x,y)¤ÎÅÀ¤Î¥°¥ë¡¼¥×ID¤ò (x+2*y) mod 5 ¤ÈÄê¤á¤ë
-   ·ë²Ì¡¢²¼¿Ş¤Î¤è¤¦¤ÊÊ¬¤±Êı¤Ë¤Ê¤ê¡¢³ÆÅÀ¤Ï¾å²¼º¸±¦4ÅÀ¤ÈÊÌ¤Ê¥°¥ë¡¼¥×¤Ë¤Ê¤ë
+   ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ (x,y)ã®ç‚¹ã®ã‚°ãƒ«ãƒ¼ãƒ—IDã‚’ (x+2*y) mod 5 ã¨å®šã‚ã‚‹
+   çµæœã€ä¸‹å›³ã®ã‚ˆã†ãªåˆ†ã‘æ–¹ã«ãªã‚Šã€å„ç‚¹ã¯ä¸Šä¸‹å·¦å³4ç‚¹ã¨åˆ¥ãªã‚°ãƒ«ãƒ¼ãƒ—ã«ãªã‚‹
    0 1 2 3 4 0 1 2 3 4
    2 3 4 0 1 2 3 4 0 1
    4 0 1 2 3 4 0 1 2 3
@@ -423,14 +423,14 @@ let rec p_group_id pixel =
   m_gid.(0)
 in
 
-(* ¥°¥ë¡¼¥×ID¤ò¥»¥Ã¥È¤¹¤ë¥¢¥¯¥»¥¹´Ø¿ô *)
+(* ã‚°ãƒ«ãƒ¼ãƒ—IDã‚’ã‚»ãƒƒãƒˆã™ã‚‹ã‚¢ã‚¯ã‚»ã‚¹é–¢æ•° *)
 let rec p_set_group_id pixel id =
   let (xm_rgb, xm_isect_ps, xm_sids, xm_cdif, xm_engy,
        xm_r20p, m_gid, xm_nvectors ) = pixel in
   m_gid.(0) <- id
 in
 
-(* ³Æ¾×ÆÍÅÀ¤Ë¤ª¤±¤ëË¡Àş¥Ù¥¯¥È¥ë *)
+(* å„è¡çªç‚¹ã«ãŠã‘ã‚‹æ³•ç·šãƒ™ã‚¯ãƒˆãƒ« *)
 let rec p_nvectors pixel =
   let (xm_rgb, xm_isect_ps, xm_sids, xm_cdif, xm_engy,
        xm_r20p, xm_gid, m_nvectors ) = pixel in
@@ -438,91 +438,91 @@ let rec p_nvectors pixel =
 in
 
 (******************************************************************************
-   Á°½èÍıºÑ¤ßÊı¸ş¥Ù¥¯¥È¥ë¤Î¥á¥ó¥Ğ¥¢¥¯¥»¥¹´Ø¿ô
+   å‰å‡¦ç†æ¸ˆã¿æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®ãƒ¡ãƒ³ãƒã‚¢ã‚¯ã‚»ã‚¹é–¢æ•°
  *****************************************************************************)
 
-(* ¥Ù¥¯¥È¥ë *)
+(* ãƒ™ã‚¯ãƒˆãƒ« *)
 let rec d_vec d =
   let (m_vec, xm_const) = d in
   m_vec
 in
 
-(* ³Æ¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤·¤Æºî¤Ã¤¿ solver ¹âÂ®²½ÍÑÄê¿ô¥Æ¡¼¥Ö¥ë *)
+(* å„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã—ã¦ä½œã£ãŸ solver é«˜é€ŸåŒ–ç”¨å®šæ•°ãƒ†ãƒ¼ãƒ–ãƒ« *)
 let rec d_const d =
   let (dm_vec, m_const) = d in
   m_const
 in
 
 (******************************************************************************
-   Ê¿ÌÌ¶ÀÌÌÂÎ¤ÎÈ¿¼Í¾ğÊó
+   å¹³é¢é¡é¢ä½“ã®åå°„æƒ…å ±
  *****************************************************************************)
 
-(* ÌÌÈÖ¹æ ¥ª¥Ö¥¸¥§¥¯¥ÈÈÖ¹æ*4 + (solver¤ÎÊÖ¤êÃÍ) *)
+(* é¢ç•ªå· ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç•ªå·*4 + (solverã®è¿”ã‚Šå€¤) *)
 let rec r_surface_id r =
   let (m_sid, xm_dvec, xm_br) = r in
   m_sid
 in
 
-(* ¸÷¸»¸÷¤ÎÈ¿¼ÍÊı¸ş¥Ù¥¯¥È¥ë(¸÷¤ÈµÕ¸ş¤­) *)
+(* å…‰æºå…‰ã®åå°„æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«(å…‰ã¨é€†å‘ã) *)
 let rec r_dvec r =
   let (xm_sid, m_dvec, xm_br) = r in
   m_dvec
 in
 
-(* ÊªÂÎ¤ÎÈ¿¼ÍÎ¨ *)
+(* ç‰©ä½“ã®åå°„ç‡ *)
 let rec r_bright r =
   let (xm_sid, xm_dvec, m_br) = r in
   m_br
 in
 
 (******************************************************************************
-   ¥Ç¡¼¥¿ÆÉ¤ß¹ş¤ß¤Î´Ø¿ô·²
+   ãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿ã®é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* ¥é¥¸¥¢¥ó *)
+(* ãƒ©ã‚¸ã‚¢ãƒ³ *)
 let rec rad x =
   x *. 0.017453293
 in
 
-(**** ´Ä¶­¥Ç¡¼¥¿¤ÎÆÉ¤ß¹ş¤ß ****)
+(**** ç’°å¢ƒãƒ‡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿ ****)
 let rec read_screen_settings _ =
 
-  (* ¥¹¥¯¥ê¡¼¥óÃæ¿´¤ÎºÂÉ¸ *)
+  (* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ä¸­å¿ƒã®åº§æ¨™ *)
   screen.(0) <- read_float ();
   screen.(1) <- read_float ();
   screen.(2) <- read_float ();
-  (* ²óÅ¾³Ñ *)
+  (* å›è»¢è§’ *)
   let v1 = rad (read_float ()) in
   let cos_v1 = cos v1 in
   let sin_v1 = sin v1 in
   let v2 = rad (read_float ()) in
   let cos_v2 = cos v2 in
   let sin_v2 = sin v2 in
-  (* ¥¹¥¯¥ê¡¼¥óÌÌ¤Î±ü¹Ô¤­Êı¸ş¤Î¥Ù¥¯¥È¥ë Ãí»ëÅÀ¤«¤é¤Îµ÷Î¥200¤ò¤«¤±¤ë *)
+  (* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³é¢ã®å¥¥è¡Œãæ–¹å‘ã®ãƒ™ã‚¯ãƒˆãƒ« æ³¨è¦–ç‚¹ã‹ã‚‰ã®è·é›¢200ã‚’ã‹ã‘ã‚‹ *)
   screenz_dir.(0) <- cos_v1 *. sin_v2 *. 200.0;
   screenz_dir.(1) <- sin_v1 *. -200.0;
   screenz_dir.(2) <- cos_v1 *. cos_v2 *. 200.0;
-  (* ¥¹¥¯¥ê¡¼¥óÌÌXÊı¸ş¤Î¥Ù¥¯¥È¥ë *)
+  (* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³é¢Xæ–¹å‘ã®ãƒ™ã‚¯ãƒˆãƒ« *)
   screenx_dir.(0) <- cos_v2;
   screenx_dir.(1) <- 0.0;
   screenx_dir.(2) <- fneg sin_v2;
-  (* ¥¹¥¯¥ê¡¼¥óÌÌYÊı¸ş¤Î¥Ù¥¯¥È¥ë *)
+  (* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³é¢Yæ–¹å‘ã®ãƒ™ã‚¯ãƒˆãƒ« *)
   screeny_dir.(0) <- fneg sin_v1 *. sin_v2;
   screeny_dir.(1) <- fneg cos_v1;
   screeny_dir.(2) <- fneg sin_v1 *. cos_v2;
-  (* »ëÅÀ°ÌÃÖ¥Ù¥¯¥È¥ë(ÀäÂĞºÂÉ¸) *)
+  (* è¦–ç‚¹ä½ç½®ãƒ™ã‚¯ãƒˆãƒ«(çµ¶å¯¾åº§æ¨™) *)
   viewpoint.(0) <- screen.(0) -. screenz_dir.(0);
   viewpoint.(1) <- screen.(1) -. screenz_dir.(1);
   viewpoint.(2) <- screen.(2) -. screenz_dir.(2)
 
 in
 
-(* ¸÷¸»¾ğÊó¤ÎÆÉ¤ß¹ş¤ß *)
+(* å…‰æºæƒ…å ±ã®èª­ã¿è¾¼ã¿ *)
 let rec read_light _ =
 
   let nl = read_int () in
 
-  (* ¸÷Àş´Ø·¸ *)
+  (* å…‰ç·šé–¢ä¿‚ *)
   let l1 = rad (read_float ()) in
   let sl1 = sin l1 in
   light.(1) <- fneg sl1;
@@ -536,12 +536,12 @@ let rec read_light _ =
 
 in
 
-(* ¸µ¤Î2¼¡·Á¼°¹ÔÎó A ¤ËÎ¾Â¦¤«¤é²óÅ¾¹ÔÎó R ¤ò¤«¤±¤¿¹ÔÎó R^t * A * R ¤òºî¤ë *)
-(* R ¤Ï x,y,z¼´¤Ë´Ø¤¹¤ë²óÅ¾¹ÔÎó¤ÎÀÑ R(z)R(y)R(x) *)
-(* ¥¹¥¯¥ê¡¼¥óºÂÉ¸¤Î¤¿¤á¡¢y¼´²óÅ¾¤Î¤ß³ÑÅÙ¤ÎÉä¹æ¤¬µÕ *)
+(* å…ƒã®2æ¬¡å½¢å¼è¡Œåˆ— A ã«ä¸¡å´ã‹ã‚‰å›è»¢è¡Œåˆ— R ã‚’ã‹ã‘ãŸè¡Œåˆ— R^t * A * R ã‚’ä½œã‚‹ *)
+(* R ã¯ x,y,zè»¸ã«é–¢ã™ã‚‹å›è»¢è¡Œåˆ—ã®ç© R(z)R(y)R(x) *)
+(* ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã®ãŸã‚ã€yè»¸å›è»¢ã®ã¿è§’åº¦ã®ç¬¦å·ãŒé€† *)
 
 let rec rotate_quadratic_matrix abc rot =
-  (* ²óÅ¾¹ÔÎó¤ÎÀÑ R(z)R(y)R(x) ¤ò·×»»¤¹¤ë *)
+  (* å›è»¢è¡Œåˆ—ã®ç© R(z)R(y)R(x) ã‚’è¨ˆç®—ã™ã‚‹ *)
   let cos_x = cos rot.(0) in
   let sin_x = sin rot.(0) in
   let cos_y = cos rot.(1) in
@@ -561,26 +561,26 @@ let rec rotate_quadratic_matrix abc rot =
   let m21 = sin_x *. cos_y in
   let m22 = cos_x *. cos_y in
 
-  (* a, b, c¤Î¸µ¤ÎÃÍ¤ò¥Ğ¥Ã¥¯¥¢¥Ã¥× *)
+  (* a, b, cã®å…ƒã®å€¤ã‚’ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ— *)
   let ao = abc.(0) in
   let bo = abc.(1) in
   let co = abc.(2) in
 
-  (* R^t * A * R ¤ò·×»» *)
+  (* R^t * A * R ã‚’è¨ˆç®— *)
 
-  (* X^2, Y^2, Z^2À®Ê¬ *)
+  (* X^2, Y^2, Z^2æˆåˆ† *)
   abc.(0) <- ao *. fsqr m00 +. bo *. fsqr m10 +. co *. fsqr m20;
   abc.(1) <- ao *. fsqr m01 +. bo *. fsqr m11 +. co *. fsqr m21;
   abc.(2) <- ao *. fsqr m02 +. bo *. fsqr m12 +. co *. fsqr m22;
 
-  (* ²óÅ¾¤Ë¤è¤Ã¤ÆÀ¸¤¸¤¿ XY, YZ, ZXÀ®Ê¬ *)
+  (* å›è»¢ã«ã‚ˆã£ã¦ç”Ÿã˜ãŸ XY, YZ, ZXæˆåˆ† *)
   rot.(0) <- 2.0 *. (ao *. m01 *. m02 +. bo *. m11 *. m12 +. co *. m21 *. m22);
   rot.(1) <- 2.0 *. (ao *. m00 *. m02 +. bo *. m10 *. m12 +. co *. m20 *. m22);
   rot.(2) <- 2.0 *. (ao *. m00 *. m01 +. bo *. m10 *. m11 +. co *. m20 *. m21)
 
 in
 
-(**** ¥ª¥Ö¥¸¥§¥¯¥È1¤Ä¤Î¥Ç¡¼¥¿¤ÎÆÉ¤ß¹ş¤ß ****)
+(**** ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ1ã¤ã®ãƒ‡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿ ****)
 let rec read_nth_object n =
 
   let texture = read_int () in
@@ -620,12 +620,12 @@ let rec read_nth_object n =
 	)
       else ();
 
-      (* ¥Ñ¥é¥á¡¼¥¿¤ÎÀµµ¬²½ *)
+      (* ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®æ­£è¦åŒ– *)
 
-      (* Ãí: ²¼µ­Àµµ¬²½ (form = 2) »²¾È *)
+      (* æ³¨: ä¸‹è¨˜æ­£è¦åŒ– (form = 2) å‚ç…§ *)
       let m_invert2 = if form = 2 then true else m_invert in
       let ctbl = create_array 4 0.0 in
-      (* ¤³¤³¤«¤é¤¢¤È¤Ï abc ¤È rotation ¤·¤«Áàºî¤·¤Ê¤¤¡£*)
+      (* ã“ã“ã‹ã‚‰ã‚ã¨ã¯ abc ã¨ rotation ã—ã‹æ“ä½œã—ãªã„ã€‚*)
       let obj =
 	(texture, form, refltype, isrot_p,
 	 abc, xyz, (* x-z *)
@@ -639,20 +639,20 @@ let rec read_nth_object n =
 
       if form = 3 then
 	(
-	  (* 2¼¡¶ÊÌÌ: X,Y,Z ¥µ¥¤¥º¤«¤é2¼¡·Á¼°¹ÔÎó¤ÎÂĞ³ÑÀ®Ê¬¤Ø *)
+	  (* 2æ¬¡æ›²é¢: X,Y,Z ã‚µã‚¤ã‚ºã‹ã‚‰2æ¬¡å½¢å¼è¡Œåˆ—ã®å¯¾è§’æˆåˆ†ã¸ *)
 	 let a = abc.(0) in
-	 abc.(0) <- if fiszero a then 0.0 else sgn a /. fsqr a; (* X^2 À®Ê¬ *)
+	 abc.(0) <- if fiszero a then 0.0 else sgn a /. fsqr a; (* X^2 æˆåˆ† *)
 	 let b = abc.(1) in
-	 abc.(1) <- if fiszero b then 0.0 else sgn b /. fsqr b; (* Y^2 À®Ê¬ *)
+	 abc.(1) <- if fiszero b then 0.0 else sgn b /. fsqr b; (* Y^2 æˆåˆ† *)
 	 let c = abc.(2) in
-	 abc.(2) <- if fiszero c then 0.0 else sgn c /. fsqr c  (* Z^2 À®Ê¬ *)
+	 abc.(2) <- if fiszero c then 0.0 else sgn c /. fsqr c  (* Z^2 æˆåˆ† *)
 	)
       else if form = 2 then
-	(* Ê¿ÌÌ: Ë¡Àş¥Ù¥¯¥È¥ë¤òÀµµ¬²½, ¶ËÀ­¤òÉé¤ËÅı°ì *)
+	(* å¹³é¢: æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–, æ¥µæ€§ã‚’è² ã«çµ±ä¸€ *)
 	vecunit_sgn abc (not m_invert)
       else ();
 
-      (* 2¼¡·Á¼°¹ÔÎó¤Ë²óÅ¾ÊÑ´¹¤ò»Ü¤¹ *)
+      (* 2æ¬¡å½¢å¼è¡Œåˆ—ã«å›è»¢å¤‰æ›ã‚’æ–½ã™ *)
       if isrot_p <> 0 then
 	rotate_quadratic_matrix abc rotation
       else ();
@@ -660,10 +660,10 @@ let rec read_nth_object n =
       true
      )
   else
-    false (* ¥Ç¡¼¥¿¤Î½ªÎ» *)
+    false (* ãƒ‡ãƒ¼ã‚¿ã®çµ‚äº† *)
 in
 
-(**** ÊªÂÎ¥Ç¡¼¥¿Á´ÂÎ¤ÎÆÉ¤ß¹ş¤ß ****)
+(**** ç‰©ä½“ãƒ‡ãƒ¼ã‚¿å…¨ä½“ã®èª­ã¿è¾¼ã¿ ****)
 let rec read_object n =
   if n < 60 then
     if read_nth_object n then
@@ -677,9 +677,9 @@ let rec read_all_object _ =
   read_object 0
 in
 
-(**** AND, OR ¥Í¥Ã¥È¥ï¡¼¥¯¤ÎÆÉ¤ß¹ş¤ß ****)
+(**** AND, OR ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã®èª­ã¿è¾¼ã¿ ****)
 
-(* ¥Í¥Ã¥È¥ï¡¼¥¯1¤Ä¤òÆÉ¤ß¹ş¤ß¥Ù¥¯¥È¥ë¤Ë¤·¤ÆÊÖ¤¹ *)
+(* ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯1ã¤ã‚’èª­ã¿è¾¼ã¿ãƒ™ã‚¯ãƒˆãƒ«ã«ã—ã¦è¿”ã™ *)
 let rec read_net_item length =
   let item = read_int () in
   if item = -1 then create_array (length + 1) (-1)
@@ -717,21 +717,21 @@ let rec read_parameter _ =
 in
 
 (******************************************************************************
-   Ä¾Àş¤È¥ª¥Ö¥¸¥§¥¯¥È¤Î¸òÅÀ¤òµá¤á¤ë´Ø¿ô·²
+   ç›´ç·šã¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®äº¤ç‚¹ã‚’æ±‚ã‚ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
 (* solver :
-   ¥ª¥Ö¥¸¥§¥¯¥È (¤Î index) ¤È¡¢¥Ù¥¯¥È¥ë L, P ¤ò¼õ¤±¤È¤ê¡¢
-   Ä¾Àş Lt + P ¤È¡¢¥ª¥Ö¥¸¥§¥¯¥È¤È¤Î¸òÅÀ¤òµá¤á¤ë¡£
-   ¸òÅÀ¤¬¤Ê¤¤¾ì¹ç¤Ï 0 ¤ò¡¢¸òÅÀ¤¬¤¢¤ë¾ì¹ç¤Ï¤½¤ì°Ê³°¤òÊÖ¤¹¡£
-   ¤³¤ÎÊÖ¤êÃÍ¤Ï nvector ¤Ç¸òÅÀ¤ÎË¡Àş¥Ù¥¯¥È¥ë¤òµá¤á¤ëºİ¤ËÉ¬Í×¡£
-   (Ä¾ÊıÂÎ¤Î¾ì¹ç)
+   ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ (ã® index) ã¨ã€ãƒ™ã‚¯ãƒˆãƒ« L, P ã‚’å—ã‘ã¨ã‚Šã€
+   ç›´ç·š Lt + P ã¨ã€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¨ã®äº¤ç‚¹ã‚’æ±‚ã‚ã‚‹ã€‚
+   äº¤ç‚¹ãŒãªã„å ´åˆã¯ 0 ã‚’ã€äº¤ç‚¹ãŒã‚ã‚‹å ´åˆã¯ãã‚Œä»¥å¤–ã‚’è¿”ã™ã€‚
+   ã“ã®è¿”ã‚Šå€¤ã¯ nvector ã§äº¤ç‚¹ã®æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ±‚ã‚ã‚‹éš›ã«å¿…è¦ã€‚
+   (ç›´æ–¹ä½“ã®å ´åˆ)
 
-   ¸òÅÀ¤ÎºÂÉ¸¤Ï t ¤ÎÃÍ¤È¤·¤Æ solver_dist ¤Ë³ÊÇ¼¤µ¤ì¤ë¡£
+   äº¤ç‚¹ã®åº§æ¨™ã¯ t ã®å€¤ã¨ã—ã¦ solver_dist ã«æ ¼ç´ã•ã‚Œã‚‹ã€‚
 *)
 
-(* Ä¾ÊıÂÎ¤Î»ØÄê¤µ¤ì¤¿ÌÌ¤Ë¾×ÆÍ¤¹¤ë¤«¤É¤¦¤«È½Äê¤¹¤ë *)
-(* i0 : ÌÌ¤Ë¿âÄ¾¤Ê¼´¤Îindex X:0, Y:1, Z:2         i2,i3¤ÏÂ¾¤Î2¼´¤Îindex *)
+(* ç›´æ–¹ä½“ã®æŒ‡å®šã•ã‚ŒãŸé¢ã«è¡çªã™ã‚‹ã‹ã©ã†ã‹åˆ¤å®šã™ã‚‹ *)
+(* i0 : é¢ã«å‚ç›´ãªè»¸ã®index X:0, Y:1, Z:2         i2,i3ã¯ä»–ã®2è»¸ã®index *)
 let rec solver_rect_surface m dirvec b0 b1 b2 i0 i1 i2  =
   if fiszero dirvec.(i0) then false else
   let abc = o_param_abc m in
@@ -746,19 +746,19 @@ let rec solver_rect_surface m dirvec b0 b1 b2 i0 i1 i2  =
 in
 
 
-(***** Ä¾ÊıÂÎ¥ª¥Ö¥¸¥§¥¯¥È¤Î¾ì¹ç ****)
+(***** ç›´æ–¹ä½“ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å ´åˆ ****)
 let rec solver_rect m dirvec b0 b1 b2 =
-  if      solver_rect_surface m dirvec b0 b1 b2 0 1 2 then 1   (* YZ Ê¿ÌÌ *)
-  else if solver_rect_surface m dirvec b1 b2 b0 1 2 0 then 2   (* ZX Ê¿ÌÌ *)
-  else if solver_rect_surface m dirvec b2 b0 b1 2 0 1 then 3   (* XY Ê¿ÌÌ *)
+  if      solver_rect_surface m dirvec b0 b1 b2 0 1 2 then 1   (* YZ å¹³é¢ *)
+  else if solver_rect_surface m dirvec b1 b2 b0 1 2 0 then 2   (* ZX å¹³é¢ *)
+  else if solver_rect_surface m dirvec b2 b0 b1 2 0 1 then 3   (* XY å¹³é¢ *)
   else                                                     0
 in
 
 
-(* Ê¿ÌÌ¥ª¥Ö¥¸¥§¥¯¥È¤Î¾ì¹ç *)
+(* å¹³é¢ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å ´åˆ *)
 let rec solver_surface m dirvec b0 b1 b2 =
-  (* ÅÀ¤ÈÊ¿ÌÌ¤ÎÉä¹æ¤Ä¤­µ÷Î¥ *)
-  (* Ê¿ÌÌ¤Ï¶ËÀ­¤¬Éé¤ËÅı°ì¤µ¤ì¤Æ¤¤¤ë *)
+  (* ç‚¹ã¨å¹³é¢ã®ç¬¦å·ã¤ãè·é›¢ *)
+  (* å¹³é¢ã¯æ¥µæ€§ãŒè² ã«çµ±ä¸€ã•ã‚Œã¦ã„ã‚‹ *)
   let abc = o_param_abc m in
   let d = veciprod dirvec abc in
   if fispos d then (
@@ -768,8 +768,8 @@ let rec solver_surface m dirvec b0 b1 b2 =
 in
 
 
-(* 3ÊÑ¿ô2¼¡·Á¼° v^t A v ¤ò·×»» *)
-(* ²óÅ¾¤¬Ìµ¤¤¾ì¹ç¤ÏÂĞ³ÑÉôÊ¬¤Î¤ß·×»»¤¹¤ì¤ĞÎÉ¤¤ *)
+(* 3å¤‰æ•°2æ¬¡å½¢å¼ v^t A v ã‚’è¨ˆç®— *)
+(* å›è»¢ãŒç„¡ã„å ´åˆã¯å¯¾è§’éƒ¨åˆ†ã®ã¿è¨ˆç®—ã™ã‚Œã°è‰¯ã„ *)
 let rec quadratic m v0 v1 v2 =
   let diag_part =
     fsqr v0 *. o_param_a m +. fsqr v1 *. o_param_b m +. fsqr v2 *. o_param_c m
@@ -783,8 +783,8 @@ let rec quadratic m v0 v1 v2 =
       +. v0 *. v1 *. o_param_r3 m
 in
 
-(* 3ÊÑ¿ôÁĞ1¼¡·Á¼° v^t A w ¤ò·×»» *)
-(* ²óÅ¾¤¬Ìµ¤¤¾ì¹ç¤Ï A ¤ÎÂĞ³ÑÉôÊ¬¤Î¤ß·×»»¤¹¤ì¤ĞÎÉ¤¤ *)
+(* 3å¤‰æ•°åŒ1æ¬¡å½¢å¼ v^t A w ã‚’è¨ˆç®— *)
+(* å›è»¢ãŒç„¡ã„å ´åˆã¯ A ã®å¯¾è§’éƒ¨åˆ†ã®ã¿è¨ˆç®—ã™ã‚Œã°è‰¯ã„ *)
 let rec bilinear m v0 v1 v2 w0 w1 w2 =
   let diag_part =
     v0 *. w0 *. o_param_a m
@@ -801,29 +801,29 @@ let rec bilinear m v0 v1 v2 w0 w1 w2 =
 in
 
 
-(* 2¼¡¶ÊÌÌ¤Ş¤¿¤Ï±ß¿í¤Î¾ì¹ç *)
-(* 2¼¡·Á¼°¤ÇÉ½¸½¤µ¤ì¤¿¶ÊÌÌ x^t A x - (0 ¤« 1) = 0 ¤È Ä¾Àş base + dirvec*t ¤Î
-   ¸òÅÀ¤òµá¤á¤ë¡£¶ÊÀş¤ÎÊıÄø¼°¤Ë x = base + dirvec*t ¤òÂåÆş¤·¤Æt¤òµá¤á¤ë¡£
-   ¤Ä¤Ş¤ê (base + dirvec*t)^t A (base + dirvec*t) - (0 ¤« 1) = 0¡¢
-   Å¸³«¤¹¤ë¤È (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
-   (base^t A base) - (0¤«1) = 0 ¡¢¤è¤Ã¤Æt¤Ë´Ø¤¹¤ë2¼¡ÊıÄø¼°¤ò²ò¤±¤ĞÎÉ¤¤¡£*)
+(* 2æ¬¡æ›²é¢ã¾ãŸã¯å††éŒã®å ´åˆ *)
+(* 2æ¬¡å½¢å¼ã§è¡¨ç¾ã•ã‚ŒãŸæ›²é¢ x^t A x - (0 ã‹ 1) = 0 ã¨ ç›´ç·š base + dirvec*t ã®
+   äº¤ç‚¹ã‚’æ±‚ã‚ã‚‹ã€‚æ›²ç·šã®æ–¹ç¨‹å¼ã« x = base + dirvec*t ã‚’ä»£å…¥ã—ã¦tã‚’æ±‚ã‚ã‚‹ã€‚
+   ã¤ã¾ã‚Š (base + dirvec*t)^t A (base + dirvec*t) - (0 ã‹ 1) = 0ã€
+   å±•é–‹ã™ã‚‹ã¨ (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
+   (base^t A base) - (0ã‹1) = 0 ã€ã‚ˆã£ã¦tã«é–¢ã™ã‚‹2æ¬¡æ–¹ç¨‹å¼ã‚’è§£ã‘ã°è‰¯ã„ã€‚*)
 
 let rec solver_second m dirvec b0 b1 b2 =
 
-  (* ²ò¤Î¸ø¼° (-b' ¡Ş sqrt(b'^2 - a*c)) / a  ¤ò»ÈÍÑ(b' = b/2) *)
+  (* è§£ã®å…¬å¼ (-b' Â± sqrt(b'^2 - a*c)) / a  ã‚’ä½¿ç”¨(b' = b/2) *)
   (* a = dirvec^t A dirvec *)
   let aa = quadratic m dirvec.(0) dirvec.(1) dirvec.(2) in
 
   if fiszero aa then
-    0 (* Àµ³Î¤Ë¤Ï¤³¤Î¾ì¹ç¤â1¼¡ÊıÄø¼°¤Î²ò¤¬¤¢¤ë¤¬¡¢Ìµ»ë¤·¤Æ¤âÄÌ¾ï¤ÏÂç¾æÉ× *)
+    0 (* æ­£ç¢ºã«ã¯ã“ã®å ´åˆã‚‚1æ¬¡æ–¹ç¨‹å¼ã®è§£ãŒã‚ã‚‹ãŒã€ç„¡è¦–ã—ã¦ã‚‚é€šå¸¸ã¯å¤§ä¸ˆå¤« *)
   else (
 
     (* b' = b/2 = dirvec^t A base   *)
     let bb = bilinear m dirvec.(0) dirvec.(1) dirvec.(2) b0 b1 b2 in
-    (* c = base^t A base  - (0¤«1)  *)
+    (* c = base^t A base  - (0ã‹1)  *)
     let cc0 = quadratic m b0 b1 b2 in
     let cc = if o_form m = 3 then cc0 -. 1.0 else cc0 in
-    (* È½ÊÌ¼° *)
+    (* åˆ¤åˆ¥å¼ *)
     let d = fsqr bb -. aa *. cc in
 
     if fispos d then (
@@ -836,42 +836,42 @@ let rec solver_second m dirvec b0 b1 b2 =
    )
 in
 
-(**** solver ¤Î¥á¥¤¥ó¥ë¡¼¥Á¥ó ****)
+(**** solver ã®ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒãƒ³ ****)
 let rec solver index dirvec org =
   let m = objects.(index) in
-  (* Ä¾Àş¤Î»ÏÅÀ¤òÊªÂÎ¤Î´ğ½à°ÌÃÖ¤Ë¹ç¤ï¤»¤ÆÊ¿¹Ô°ÜÆ° *)
+  (* ç›´ç·šã®å§‹ç‚¹ã‚’ç‰©ä½“ã®åŸºæº–ä½ç½®ã«åˆã‚ã›ã¦å¹³è¡Œç§»å‹• *)
   let b0 =  org.(0) -. o_param_x m in
   let b1 =  org.(1) -. o_param_y m in
   let b2 =  org.(2) -. o_param_z m in
   let m_shape = o_form m in
-  (* ÊªÂÎ¤Î¼ïÎà¤Ë±ş¤¸¤¿Êä½õ´Ø¿ô¤ò¸Æ¤Ö *)
-  if m_shape = 1 then       solver_rect m dirvec b0 b1 b2    (* Ä¾ÊıÂÎ *)
-  else if m_shape = 2 then  solver_surface m dirvec b0 b1 b2 (* Ê¿ÌÌ *)
-  else                      solver_second m dirvec b0 b1 b2  (* 2¼¡¶ÊÌÌ/±ß¿í *)
+  (* ç‰©ä½“ã®ç¨®é¡ã«å¿œã˜ãŸè£œåŠ©é–¢æ•°ã‚’å‘¼ã¶ *)
+  if m_shape = 1 then       solver_rect m dirvec b0 b1 b2    (* ç›´æ–¹ä½“ *)
+  else if m_shape = 2 then  solver_surface m dirvec b0 b1 b2 (* å¹³é¢ *)
+  else                      solver_second m dirvec b0 b1 b2  (* 2æ¬¡æ›²é¢/å††éŒ *)
 in
 
 (******************************************************************************
-   solver¤Î¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ
+   solverã®ãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ
  *****************************************************************************)
 (*
-   ÄÌ¾ïÈÇsolver ¤ÈÆ±ÍÍ¡¢Ä¾Àş start + t * dirvec ¤ÈÊªÂÎ¤Î¸òÅÀ¤ò t ¤ÎÃÍ¤È¤·¤ÆÊÖ¤¹
-   t ¤ÎÃÍ¤Ï solver_dist¤Ë³ÊÇ¼
+   é€šå¸¸ç‰ˆsolver ã¨åŒæ§˜ã€ç›´ç·š start + t * dirvec ã¨ç‰©ä½“ã®äº¤ç‚¹ã‚’ t ã®å€¤ã¨ã—ã¦è¿”ã™
+   t ã®å€¤ã¯ solver_distã«æ ¼ç´
 
-   solver_fast ¤Ï¡¢Ä¾Àş¤ÎÊı¸ş¥Ù¥¯¥È¥ë dirvec ¤Ë¤Ä¤¤¤Æºî¤Ã¤¿¥Æ¡¼¥Ö¥ë¤ò»ÈÍÑ
-   ÆâÉôÅª¤Ë solver_rect_fast, solver_surface_fast, solver_second_fast¤ò¸Æ¤Ö
+   solver_fast ã¯ã€ç›´ç·šã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« dirvec ã«ã¤ã„ã¦ä½œã£ãŸãƒ†ãƒ¼ãƒ–ãƒ«ã‚’ä½¿ç”¨
+   å†…éƒ¨çš„ã« solver_rect_fast, solver_surface_fast, solver_second_fastã‚’å‘¼ã¶
 
-   solver_fast2 ¤Ï¡¢dirvec¤ÈÄ¾Àş¤Î»ÏÅÀ start ¤½¤ì¤¾¤ì¤Ëºî¤Ã¤¿¥Æ¡¼¥Ö¥ë¤ò»ÈÍÑ
-   Ä¾ÊıÂÎ¤Ë¤Ä¤¤¤Æ¤Ïstart¤Î¥Æ¡¼¥Ö¥ë¤Ë¤è¤ë¹âÂ®²½¤Ï¤Ç¤­¤Ê¤¤¤Î¤Ç¡¢solver_fast¤È
-   Æ±¤¸¤¯ solver_rect_fast¤òÆâÉôÅª¤Ë¸Æ¤Ö¡£¤½¤ì°Ê³°¤ÎÊªÂÎ¤Ë¤Ä¤¤¤Æ¤Ï
-   solver_surface_fast2¤Ş¤¿¤Ïsolver_second_fast2¤òÆâÉôÅª¤Ë¸Æ¤Ö
+   solver_fast2 ã¯ã€dirvecã¨ç›´ç·šã®å§‹ç‚¹ start ãã‚Œãã‚Œã«ä½œã£ãŸãƒ†ãƒ¼ãƒ–ãƒ«ã‚’ä½¿ç”¨
+   ç›´æ–¹ä½“ã«ã¤ã„ã¦ã¯startã®ãƒ†ãƒ¼ãƒ–ãƒ«ã«ã‚ˆã‚‹é«˜é€ŸåŒ–ã¯ã§ããªã„ã®ã§ã€solver_fastã¨
+   åŒã˜ã solver_rect_fastã‚’å†…éƒ¨çš„ã«å‘¼ã¶ã€‚ãã‚Œä»¥å¤–ã®ç‰©ä½“ã«ã¤ã„ã¦ã¯
+   solver_surface_fast2ã¾ãŸã¯solver_second_fast2ã‚’å†…éƒ¨çš„ã«å‘¼ã¶
 
-   ÊÑ¿ôdconst¤ÏÊı¸ş¥Ù¥¯¥È¥ë¡¢sconst¤Ï»ÏÅÀ¤Ë´Ø¤¹¤ë¥Æ¡¼¥Ö¥ë
+   å¤‰æ•°dconstã¯æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã€sconstã¯å§‹ç‚¹ã«é–¢ã™ã‚‹ãƒ†ãƒ¼ãƒ–ãƒ«
 *)
 
-(***** solver_rect¤Îdirvec¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ ******)
+(***** solver_rectã®dirvecãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ ******)
 let rec solver_rect_fast m v dconst b0 b1 b2 =
   let d0 = (dconst.(0) -. b0) *. dconst.(1) in
-  if  (* YZÊ¿ÌÌ¤È¤Î¾×ÆÍÈ½Äê *)
+  if  (* YZå¹³é¢ã¨ã®è¡çªåˆ¤å®š *)
     if fless (fabs (d0 *. v.(1) +. b1)) (o_param_b m) then
       if fless (fabs (d0 *. v.(2) +. b2)) (o_param_c m) then
 	not (fiszero dconst.(1))
@@ -880,7 +880,7 @@ let rec solver_rect_fast m v dconst b0 b1 b2 =
   then
     (solver_dist.(0) <- d0; 1)
   else let d1 = (dconst.(2) -. b1) *. dconst.(3) in
-  if  (* ZXÊ¿ÌÌ¤È¤Î¾×ÆÍÈ½Äê *)
+  if  (* ZXå¹³é¢ã¨ã®è¡çªåˆ¤å®š *)
     if fless (fabs (d1 *. v.(0) +. b0)) (o_param_a m) then
       if fless (fabs (d1 *. v.(2) +. b2)) (o_param_c m) then
 	not (fiszero dconst.(3))
@@ -889,7 +889,7 @@ let rec solver_rect_fast m v dconst b0 b1 b2 =
   then
     (solver_dist.(0) <- d1; 2)
   else let d2 = (dconst.(4) -. b2) *. dconst.(5) in
-  if  (* XYÊ¿ÌÌ¤È¤Î¾×ÆÍÈ½Äê *)
+  if  (* XYå¹³é¢ã¨ã®è¡çªåˆ¤å®š *)
     if fless (fabs (d2 *. v.(0) +. b0)) (o_param_a m) then
       if fless (fabs (d2 *. v.(1) +. b1)) (o_param_b m) then
 	not (fiszero dconst.(5))
@@ -901,7 +901,7 @@ let rec solver_rect_fast m v dconst b0 b1 b2 =
     0
 in
 
-(**** solver_surface¤Îdirvec¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ ******)
+(**** solver_surfaceã®dirvecãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ ******)
 let rec solver_surface_fast m dconst b0 b1 b2 =
   if fisneg dconst.(0) then (
     solver_dist.(0) <-
@@ -910,7 +910,7 @@ let rec solver_surface_fast m dconst b0 b1 b2 =
    ) else 0
 in
 
-(**** solver_second ¤Îdirvec¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ ******)
+(**** solver_second ã®dirvecãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ ******)
 let rec solver_second_fast m dconst b0 b1 b2 =
 
   let aa = dconst.(0) in
@@ -930,7 +930,7 @@ let rec solver_second_fast m dconst b0 b1 b2 =
     else 0
 in
 
-(**** solver ¤Îdirvec¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ *******)
+(**** solver ã®dirvecãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ *******)
 let rec solver_fast index dirvec org =
   let m = objects.(index) in
   let b0 = org.(0) -. o_param_x m in
@@ -950,7 +950,7 @@ in
 
 
 
-(* solver_surface¤Îdirvec+start¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ *)
+(* solver_surfaceã®dirvec+startãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ *)
 let rec solver_surface_fast2 m dconst sconst b0 b1 b2 =
   if fisneg dconst.(0) then (
     solver_dist.(0) <- dconst.(0) *. sconst.(3);
@@ -958,7 +958,7 @@ let rec solver_surface_fast2 m dconst sconst b0 b1 b2 =
    ) else 0
 in
 
-(* solver_second¤Îdirvec+start¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ *)
+(* solver_secondã®dirvec+startãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ *)
 let rec solver_second_fast2 m dconst sconst b0 b1 b2 =
 
   let aa = dconst.(0) in
@@ -977,7 +977,7 @@ let rec solver_second_fast2 m dconst sconst b0 b1 b2 =
     else 0
 in
 
-(* solver¤Î¡¢dirvec+start¥Æ¡¼¥Ö¥ë»ÈÍÑ¹âÂ®ÈÇ *)
+(* solverã®ã€dirvec+startãƒ†ãƒ¼ãƒ–ãƒ«ä½¿ç”¨é«˜é€Ÿç‰ˆ *)
 let rec solver_fast2 index dirvec =
   let m = objects.(index) in
   let sconst = o_param_ctbl m in
@@ -996,28 +996,28 @@ let rec solver_fast2 index dirvec =
 in
 
 (******************************************************************************
-   Êı¸ş¥Ù¥¯¥È¥ë¤ÎÄê¿ô¥Æ¡¼¥Ö¥ë¤ò·×»»¤¹¤ë´Ø¿ô·²
+   æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®å®šæ•°ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’è¨ˆç®—ã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* Ä¾ÊıÂÎ¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤¹¤ëÁ°½èÍı *)
+(* ç›´æ–¹ä½“ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã™ã‚‹å‰å‡¦ç† *)
 let rec setup_rect_table vec m =
   let const = create_array 6 0.0 in
 
-  if fiszero vec.(0) then (* YZÊ¿ÌÌ *)
+  if fiszero vec.(0) then (* YZå¹³é¢ *)
     const.(1) <- 0.0
   else (
-    (* ÌÌ¤Î X ºÂÉ¸ *)
+    (* é¢ã® X åº§æ¨™ *)
     const.(0) <- fneg_cond (xor (o_isinvert m) (fisneg vec.(0))) (o_param_a m);
-    (* Êı¸ş¥Ù¥¯¥È¥ë¤ò²¿ÇÜ¤¹¤ì¤ĞXÊı¸ş¤Ë1¿Ê¤à¤« *)
+    (* æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’ä½•å€ã™ã‚Œã°Xæ–¹å‘ã«1é€²ã‚€ã‹ *)
     const.(1) <- 1.0 /. vec.(0)
   );
-  if fiszero vec.(1) then (* ZXÊ¿ÌÌ : YZÊ¿ÌÌ¤ÈÆ±ÍÍ*)
+  if fiszero vec.(1) then (* ZXå¹³é¢ : YZå¹³é¢ã¨åŒæ§˜*)
     const.(3) <- 0.0
   else (
     const.(2) <- fneg_cond (xor (o_isinvert m) (fisneg vec.(1))) (o_param_b m);
     const.(3) <- 1.0 /. vec.(1)
   );
-  if fiszero vec.(2) then (* XYÊ¿ÌÌ : YZÊ¿ÌÌ¤ÈÆ±ÍÍ*)
+  if fiszero vec.(2) then (* XYå¹³é¢ : YZå¹³é¢ã¨åŒæ§˜*)
     const.(5) <- 0.0
   else (
     const.(4) <- fneg_cond (xor (o_isinvert m) (fisneg vec.(2))) (o_param_c m);
@@ -1026,16 +1026,16 @@ let rec setup_rect_table vec m =
   const
 in
 
-(* Ê¿ÌÌ¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤¹¤ëÁ°½èÍı *)
+(* å¹³é¢ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã™ã‚‹å‰å‡¦ç† *)
 let rec setup_surface_table vec m =
   let const = create_array 4 0.0 in
   let d =
     vec.(0) *. o_param_a m +. vec.(1) *. o_param_b m +. vec.(2) *. o_param_c m
   in
   if fispos d then (
-    (* Êı¸ş¥Ù¥¯¥È¥ë¤ò²¿ÇÜ¤¹¤ì¤ĞÊ¿ÌÌ¤Î¿âÄ¾Êı¸ş¤Ë 1 ¿Ê¤à¤« *)
+    (* æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’ä½•å€ã™ã‚Œã°å¹³é¢ã®å‚ç›´æ–¹å‘ã« 1 é€²ã‚€ã‹ *)
     const.(0) <- -1.0 /. d;
-    (* ¤¢¤ëÅÀ¤ÎÊ¿ÌÌ¤«¤é¤Îµ÷Î¥¤¬Êı¸ş¥Ù¥¯¥È¥ë²¿¸ÄÊ¬¤«¤òÆ³¤¯3¼¡°ì·Á¼°¤Î·¸¿ô *)
+    (* ã‚ã‚‹ç‚¹ã®å¹³é¢ã‹ã‚‰ã®è·é›¢ãŒæ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ä½•å€‹åˆ†ã‹ã‚’å°ã3æ¬¡ä¸€å½¢å¼ã®ä¿‚æ•° *)
     const.(1) <- fneg (o_param_a m /. d);
     const.(2) <- fneg (o_param_b m /. d);
     const.(3) <- fneg (o_param_c m /. d)
@@ -1045,7 +1045,7 @@ let rec setup_surface_table vec m =
 
 in
 
-(* 2¼¡¶ÊÌÌ¤ËÂĞ¤¹¤ëÁ°½èÍı *)
+(* 2æ¬¡æ›²é¢ã«å¯¾ã™ã‚‹å‰å‡¦ç† *)
 let rec setup_second_table v m =
   let const = create_array 5 0.0 in
 
@@ -1054,10 +1054,10 @@ let rec setup_second_table v m =
   let c2 = fneg (v.(1) *. o_param_b m) in
   let c3 = fneg (v.(2) *. o_param_c m) in
 
-  const.(0) <- aa;  (* 2¼¡ÊıÄø¼°¤Î a ·¸¿ô *)
+  const.(0) <- aa;  (* 2æ¬¡æ–¹ç¨‹å¼ã® a ä¿‚æ•° *)
 
-  (* b' = dirvec^t A start ¤À¤¬¡¢(dirvec^t A)¤ÎÉôÊ¬¤ò·×»»¤·const.(1:3)¤Ë³ÊÇ¼¡£
-     b' ¤òµá¤á¤ë¤Ë¤Ï¤³¤Î¥Ù¥¯¥È¥ë¤Èstart¤ÎÆâÀÑ¤ò¼è¤ì¤ĞÎÉ¤¤¡£Éä¹æ¤ÏµÕ¤Ë¤¹¤ë *)
+  (* b' = dirvec^t A start ã ãŒã€(dirvec^t A)ã®éƒ¨åˆ†ã‚’è¨ˆç®—ã—const.(1:3)ã«æ ¼ç´ã€‚
+     b' ã‚’æ±‚ã‚ã‚‹ã«ã¯ã“ã®ãƒ™ã‚¯ãƒˆãƒ«ã¨startã®å†…ç©ã‚’å–ã‚Œã°è‰¯ã„ã€‚ç¬¦å·ã¯é€†ã«ã™ã‚‹ *)
   if o_isrot m <> 0 then (
     const.(1) <- c1 -. fhalf (v.(2) *. o_param_r2 m +. v.(1) *. o_param_r3 m);
     const.(2) <- c2 -. fhalf (v.(2) *. o_param_r1 m +. v.(0) *. o_param_r3 m);
@@ -1068,13 +1068,13 @@ let rec setup_second_table v m =
     const.(3) <- c3
    );
   if not (fiszero aa) then
-    const.(4) <- 1.0 /. aa (* a·¸¿ô¤ÎµÕ¿ô¤òµá¤á¡¢²ò¤Î¸ø¼°¤Ç¤Î³ä¤ê»»¤ò¾Ãµî *)
+    const.(4) <- 1.0 /. aa (* aä¿‚æ•°ã®é€†æ•°ã‚’æ±‚ã‚ã€è§£ã®å…¬å¼ã§ã®å‰²ã‚Šç®—ã‚’æ¶ˆå» *)
   else ();
   const
 
 in
 
-(* ³Æ¥ª¥Ö¥¸¥§¥¯¥È¤Ë¤Ä¤¤¤ÆÊä½õ´Ø¿ô¤ò¸Æ¤ó¤Ç¥Æ¡¼¥Ö¥ë¤òºî¤ë *)
+(* å„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ã¤ã„ã¦è£œåŠ©é–¢æ•°ã‚’å‘¼ã‚“ã§ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’ä½œã‚‹ *)
 let rec iter_setup_dirvec_constants dirvec index =
   if index >= 0 then (
     let m = objects.(index) in
@@ -1097,7 +1097,7 @@ let rec setup_dirvec_constants dirvec =
 in
 
 (******************************************************************************
-   Ä¾Àş¤Î»ÏÅÀ¤Ë´Ø¤¹¤ë¥Æ¡¼¥Ö¥ë¤ò³Æ¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤·¤Æ·×»»¤¹¤ë´Ø¿ô·²
+   ç›´ç·šã®å§‹ç‚¹ã«é–¢ã™ã‚‹ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’å„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã—ã¦è¨ˆç®—ã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
 let rec setup_startp_constants p index =
@@ -1125,12 +1125,12 @@ let rec setup_startp p =
 in
 
 (******************************************************************************
-   Í¿¤¨¤é¤ì¤¿ÅÀ¤¬¥ª¥Ö¥¸¥§¥¯¥È¤Ë´Ş¤Ş¤ì¤ë¤«¤É¤¦¤«¤òÈ½Äê¤¹¤ë´Ø¿ô·²
+   ä¸ãˆã‚‰ã‚ŒãŸç‚¹ãŒã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å«ã¾ã‚Œã‚‹ã‹ã©ã†ã‹ã‚’åˆ¤å®šã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(**** ÅÀ q ¤¬¥ª¥Ö¥¸¥§¥¯¥È m ¤Î³°Éô¤«¤É¤¦¤«¤òÈ½Äê¤¹¤ë ****)
+(**** ç‚¹ q ãŒã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ m ã®å¤–éƒ¨ã‹ã©ã†ã‹ã‚’åˆ¤å®šã™ã‚‹ ****)
 
-(* Ä¾ÊıÂÎ *)
+(* ç›´æ–¹ä½“ *)
 let rec is_rect_outside m p0 p1 p2 =
   if
     if (fless (fabs p0) (o_param_a m)) then
@@ -1141,20 +1141,20 @@ let rec is_rect_outside m p0 p1 p2 =
   then o_isinvert m else not (o_isinvert m)
 in
 
-(* Ê¿ÌÌ *)
+(* å¹³é¢ *)
 let rec is_plane_outside m p0 p1 p2 =
   let w = veciprod2 (o_param_abc m) p0 p1 p2 in
   not (xor (o_isinvert m) (fisneg w))
 in
 
-(* 2¼¡¶ÊÌÌ *)
+(* 2æ¬¡æ›²é¢ *)
 let rec is_second_outside m p0 p1 p2 =
   let w = quadratic m p0 p1 p2 in
   let w2 = if o_form m = 3 then w -. 1.0 else w in
   not (xor (o_isinvert m) (fisneg w2))
 in
 
-(* ÊªÂÎ¤ÎÃæ¿´ºÂÉ¸¤ËÊ¿¹Ô°ÜÆ°¤·¤¿¾å¤Ç¡¢Å¬ÀÚ¤ÊÊä½õ´Ø¿ô¤ò¸Æ¤Ö *)
+(* ç‰©ä½“ã®ä¸­å¿ƒåº§æ¨™ã«å¹³è¡Œç§»å‹•ã—ãŸä¸Šã§ã€é©åˆ‡ãªè£œåŠ©é–¢æ•°ã‚’å‘¼ã¶ *)
 let rec is_outside m q0 q1 q2 =
   let p0 = q0 -. o_param_x m in
   let p1 = q1 -. o_param_y m in
@@ -1168,7 +1168,7 @@ let rec is_outside m q0 q1 q2 =
     is_second_outside m p0 p1 p2
 in
 
-(**** ÅÀ q ¤¬ AND ¥Í¥Ã¥È¥ï¡¼¥¯ iand ¤ÎÆâÉô¤Ë¤¢¤ë¤«¤É¤¦¤«¤òÈ½Äê ****)
+(**** ç‚¹ q ãŒ AND ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ iand ã®å†…éƒ¨ã«ã‚ã‚‹ã‹ã©ã†ã‹ã‚’åˆ¤å®š ****)
 let rec check_all_inside ofs iand q0 q1 q2 =
   let head = iand.(ofs) in
   if head = -1 then
@@ -1182,13 +1182,13 @@ let rec check_all_inside ofs iand q0 q1 q2 =
 in
 
 (******************************************************************************
-   ¾×ÆÍÅÀ¤¬Â¾¤ÎÊªÂÎ¤Î±Æ¤ËÆş¤Ã¤Æ¤¤¤ë¤«Èİ¤«¤òÈ½Äê¤¹¤ë´Ø¿ô·²
+   è¡çªç‚¹ãŒä»–ã®ç‰©ä½“ã®å½±ã«å…¥ã£ã¦ã„ã‚‹ã‹å¦ã‹ã‚’åˆ¤å®šã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* ÅÀ intersection_point ¤«¤é¡¢¸÷Àş¥Ù¥¯¥È¥ë¤ÎÊı¸ş¤ËÃ©¤ê¡¢   *)
-(* ÊªÂÎ¤Ë¤Ö¤Ä¤«¤ë (=±Æ¤Ë¤Ï¤¤¤Ã¤Æ¤¤¤ë) ¤«Èİ¤«¤òÈ½Äê¤¹¤ë¡£*)
+(* ç‚¹ intersection_point ã‹ã‚‰ã€å…‰ç·šãƒ™ã‚¯ãƒˆãƒ«ã®æ–¹å‘ã«è¾¿ã‚Šã€   *)
+(* ç‰©ä½“ã«ã¶ã¤ã‹ã‚‹ (=å½±ã«ã¯ã„ã£ã¦ã„ã‚‹) ã‹å¦ã‹ã‚’åˆ¤å®šã™ã‚‹ã€‚*)
 
-(**** AND ¥Í¥Ã¥È¥ï¡¼¥¯ iand ¤Î±ÆÆâ¤«¤É¤¦¤«¤ÎÈ½Äê ****)
+(**** AND ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ iand ã®å½±å†…ã‹ã©ã†ã‹ã®åˆ¤å®š ****)
 let rec shadow_check_and_group iand_ofs and_group =
   if and_group.(iand_ofs) = -1 then
     false
@@ -1197,8 +1197,8 @@ let rec shadow_check_and_group iand_ofs and_group =
     let t0 = solver_fast obj light_dirvec intersection_point in
     let t0p = solver_dist.(0) in
     if (if t0 <> 0 then fless t0p (-0.2) else false) then
-      (* Q: ¸òÅÀ¤Î¸õÊä¡£¼Âºİ¤Ë¤¹¤Ù¤Æ¤Î¥ª¥Ö¥¸¥§¥¯¥È¤Ë *)
-      (* Æş¤Ã¤Æ¤¤¤ë¤«¤É¤¦¤«¤òÄ´¤Ù¤ë¡£*)
+      (* Q: äº¤ç‚¹ã®å€™è£œã€‚å®Ÿéš›ã«ã™ã¹ã¦ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã« *)
+      (* å…¥ã£ã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’èª¿ã¹ã‚‹ã€‚*)
       let t = t0p +. 0.01 in
       let q0 = light.(0) *. t +. intersection_point.(0) in
       let q1 = light.(1) *. t +. intersection_point.(1) in
@@ -1207,18 +1207,18 @@ let rec shadow_check_and_group iand_ofs and_group =
 	true
       else
 	shadow_check_and_group (iand_ofs + 1) and_group
-	  (* ¼¡¤Î¥ª¥Ö¥¸¥§¥¯¥È¤«¤é¸õÊäÅÀ¤òÃµ¤¹ *)
+	  (* æ¬¡ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‹ã‚‰å€™è£œç‚¹ã‚’æ¢ã™ *)
     else
-      (* ¸òÅÀ¤¬¤Ê¤¤¾ì¹ç: ¶ËÀ­¤¬Àµ(ÆâÂ¦¤¬¿¿)¤Î¾ì¹ç¡¢    *)
-      (* AND ¥Í¥Ã¥È¤Î¶¦ÄÌÉôÊ¬¤Ï¤½¤ÎÆâÉô¤Ë´Ş¤Ş¤ì¤ë¤¿¤á¡¢*)
-      (* ¸òÅÀ¤Ï¤Ê¤¤¤³¤È¤Ï¼«ÌÀ¡£Ãµº÷¤òÂÇ¤ÁÀÚ¤ë¡£        *)
+      (* äº¤ç‚¹ãŒãªã„å ´åˆ: æ¥µæ€§ãŒæ­£(å†…å´ãŒçœŸ)ã®å ´åˆã€    *)
+      (* AND ãƒãƒƒãƒˆã®å…±é€šéƒ¨åˆ†ã¯ãã®å†…éƒ¨ã«å«ã¾ã‚Œã‚‹ãŸã‚ã€*)
+      (* äº¤ç‚¹ã¯ãªã„ã“ã¨ã¯è‡ªæ˜ã€‚æ¢ç´¢ã‚’æ‰“ã¡åˆ‡ã‚‹ã€‚        *)
       if o_isinvert (objects.(obj)) then
 	shadow_check_and_group (iand_ofs + 1) and_group
       else
 	false
 in
 
-(**** OR ¥°¥ë¡¼¥× or_group ¤Î±Æ¤«¤É¤¦¤«¤ÎÈ½Äê ****)
+(**** OR ã‚°ãƒ«ãƒ¼ãƒ— or_group ã®å½±ã‹ã©ã†ã‹ã®åˆ¤å®š ****)
 let rec shadow_check_one_or_group ofs or_group =
   let head = or_group.(ofs) in
   if head = -1 then
@@ -1233,20 +1233,20 @@ let rec shadow_check_one_or_group ofs or_group =
    )
 in
 
-(**** OR ¥°¥ë¡¼¥×¤ÎÎó¤Î¤É¤ì¤«¤Î±Æ¤ËÆş¤Ã¤Æ¤¤¤ë¤«¤É¤¦¤«¤ÎÈ½Äê ****)
+(**** OR ã‚°ãƒ«ãƒ¼ãƒ—ã®åˆ—ã®ã©ã‚Œã‹ã®å½±ã«å…¥ã£ã¦ã„ã‚‹ã‹ã©ã†ã‹ã®åˆ¤å®š ****)
 let rec shadow_check_one_or_matrix ofs or_matrix =
   let head = or_matrix.(ofs) in
   let range_primitive = head.(0) in
-  if range_primitive = -1 then (* OR¹ÔÎó¤Î½ªÎ»¥Ş¡¼¥¯ *)
+  if range_primitive = -1 then (* ORè¡Œåˆ—ã®çµ‚äº†ãƒãƒ¼ã‚¯ *)
     false
   else
-    if (* range primitive ¤¬Ìµ¤¤¤«¡¢¤Ş¤¿¤Ïrange_primitive¤È¸ò¤ï¤ë»ö¤ò³ÎÇ§ *)
-      if range_primitive = 99 then      (* range primitive ¤¬Ìµ¤¤ *)
+    if (* range primitive ãŒç„¡ã„ã‹ã€ã¾ãŸã¯range_primitiveã¨äº¤ã‚ã‚‹äº‹ã‚’ç¢ºèª *)
+      if range_primitive = 99 then      (* range primitive ãŒç„¡ã„ *)
 	true
-      else              (* range_primitive¤¬¤¢¤ë *)
+      else              (* range_primitiveãŒã‚ã‚‹ *)
 	let t = solver_fast range_primitive light_dirvec intersection_point in
-        (* range primitive ¤È¤Ö¤Ä¤«¤é¤Ê¤±¤ì¤Ğ *)
-        (* or group ¤È¤Î¸òÅÀ¤Ï¤Ê¤¤            *)
+        (* range primitive ã¨ã¶ã¤ã‹ã‚‰ãªã‘ã‚Œã° *)
+        (* or group ã¨ã®äº¤ç‚¹ã¯ãªã„            *)
 	if t <> 0 then
           if fless solver_dist.(0) (-0.1) then
             if shadow_check_one_or_group 1 head then
@@ -1256,20 +1256,20 @@ let rec shadow_check_one_or_matrix ofs or_matrix =
 	else false
     then
       if (shadow_check_one_or_group 1 head) then
-	true (* ¸òÅÀ¤¬¤¢¤ë¤Î¤Ç¡¢±Æ¤ËÆş¤ë»ö¤¬È½ÌÀ¡£Ãµº÷½ªÎ» *)
+	true (* äº¤ç‚¹ãŒã‚ã‚‹ã®ã§ã€å½±ã«å…¥ã‚‹äº‹ãŒåˆ¤æ˜ã€‚æ¢ç´¢çµ‚äº† *)
       else
-	shadow_check_one_or_matrix (ofs + 1) or_matrix (* ¼¡¤ÎÍ×ÁÇ¤ò»î¤¹ *)
+	shadow_check_one_or_matrix (ofs + 1) or_matrix (* æ¬¡ã®è¦ç´ ã‚’è©¦ã™ *)
     else
-      shadow_check_one_or_matrix (ofs + 1) or_matrix (* ¼¡¤ÎÍ×ÁÇ¤ò»î¤¹ *)
+      shadow_check_one_or_matrix (ofs + 1) or_matrix (* æ¬¡ã®è¦ç´ ã‚’è©¦ã™ *)
 
 in
 
 (******************************************************************************
-   ¸÷Àş¤ÈÊªÂÎ¤Î¸òº¹È½Äê
+   å…‰ç·šã¨ç‰©ä½“ã®äº¤å·®åˆ¤å®š
  *****************************************************************************)
 
-(**** ¤¢¤ëAND¥Í¥Ã¥È¥ï¡¼¥¯¤¬¡¢¥ì¥¤¥È¥ì¡¼¥¹¤ÎÊı¸ş¤ËÂĞ¤·¡¢****)
-(**** ¸òÅÀ¤¬¤¢¤ë¤«¤É¤¦¤«¤òÄ´¤Ù¤ë¡£                     ****)
+(**** ã‚ã‚‹ANDãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãŒã€ãƒ¬ã‚¤ãƒˆãƒ¬ãƒ¼ã‚¹ã®æ–¹å‘ã«å¯¾ã—ã€****)
+(**** äº¤ç‚¹ãŒã‚ã‚‹ã‹ã©ã†ã‹ã‚’èª¿ã¹ã‚‹ã€‚                     ****)
 let rec solve_each_element iand_ofs and_group dirvec =
   let iobj = and_group.(iand_ofs) in
   if iobj = -1 then ()
@@ -1277,8 +1277,8 @@ let rec solve_each_element iand_ofs and_group dirvec =
     let t0 = solver iobj dirvec startp in
     if t0 <> 0 then
       (
-       (* ¸òÅÀ¤¬¤¢¤ë»ş¤Ï¡¢¤½¤Î¸òÅÀ¤¬Â¾¤ÎÍ×ÁÇ¤ÎÃæ¤Ë´Ş¤Ş¤ì¤ë¤«¤É¤¦¤«Ä´¤Ù¤ë¡£*)
-       (* º£¤Ş¤Ç¤ÎÃæ¤ÇºÇ¾®¤Î t ¤ÎÃÍ¤ÈÈæ¤Ù¤ë¡£*)
+       (* äº¤ç‚¹ãŒã‚ã‚‹æ™‚ã¯ã€ãã®äº¤ç‚¹ãŒä»–ã®è¦ç´ ã®ä¸­ã«å«ã¾ã‚Œã‚‹ã‹ã©ã†ã‹èª¿ã¹ã‚‹ã€‚*)
+       (* ä»Šã¾ã§ã®ä¸­ã§æœ€å°ã® t ã®å€¤ã¨æ¯”ã¹ã‚‹ã€‚*)
        let t0p = solver_dist.(0) in
 
        if (fless 0.0 t0p) then
@@ -1302,7 +1302,7 @@ let rec solve_each_element iand_ofs and_group dirvec =
        solve_each_element (iand_ofs + 1) and_group dirvec
       )
     else
-      (* ¸òÅÀ¤¬¤Ê¤¯¡¢¤·¤«¤â¤½¤ÎÊªÂÎ¤ÏÆâÂ¦¤¬¿¿¤Ê¤é¤³¤ì°Ê¾å¸òÅÀ¤Ï¤Ê¤¤ *)
+      (* äº¤ç‚¹ãŒãªãã€ã—ã‹ã‚‚ãã®ç‰©ä½“ã¯å†…å´ãŒçœŸãªã‚‰ã“ã‚Œä»¥ä¸Šäº¤ç‚¹ã¯ãªã„ *)
       if o_isinvert (objects.(iobj)) then
 	solve_each_element (iand_ofs + 1) and_group dirvec
       else ()
@@ -1310,7 +1310,7 @@ let rec solve_each_element iand_ofs and_group dirvec =
    )
 in
 
-(**** 1¤Ä¤Î OR-group ¤Ë¤Ä¤¤¤Æ¸òÅÀ¤òÄ´¤Ù¤ë ****)
+(**** 1ã¤ã® OR-group ã«ã¤ã„ã¦äº¤ç‚¹ã‚’èª¿ã¹ã‚‹ ****)
 let rec solve_one_or_network ofs or_group dirvec =
   let head = or_group.(ofs) in
   if head <> -1 then (
@@ -1320,18 +1320,18 @@ let rec solve_one_or_network ofs or_group dirvec =
    ) else ()
 in
 
-(**** OR¥Ş¥È¥ê¥¯¥¹Á´ÂÎ¤Ë¤Ä¤¤¤Æ¸òÅÀ¤òÄ´¤Ù¤ë¡£****)
+(**** ORãƒãƒˆãƒªã‚¯ã‚¹å…¨ä½“ã«ã¤ã„ã¦äº¤ç‚¹ã‚’èª¿ã¹ã‚‹ã€‚****)
 let rec trace_or_matrix ofs or_network dirvec =
   let head = or_network.(ofs) in
   let range_primitive = head.(0) in
-  if range_primitive = -1 then (* Á´¥ª¥Ö¥¸¥§¥¯¥È½ªÎ» *)
+  if range_primitive = -1 then (* å…¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆçµ‚äº† *)
     ()
   else (
-    if range_primitive = 99 (* range primitive ¤Ê¤· *)
+    if range_primitive = 99 (* range primitive ãªã— *)
     then (solve_one_or_network 1 head dirvec)
     else
       (
-	(* range primitive ¤Î¾×ÆÍ¤·¤Ê¤±¤ì¤Ğ¸òÅÀ¤Ï¤Ê¤¤ *)
+	(* range primitive ã®è¡çªã—ãªã‘ã‚Œã°äº¤ç‚¹ã¯ãªã„ *)
        let t = solver range_primitive dirvec startp in
        if t <> 0 then
 	 let tp = solver_dist.(0) in
@@ -1344,10 +1344,10 @@ let rec trace_or_matrix ofs or_network dirvec =
   )
 in
 
-(**** ¥È¥ì¡¼¥¹ËÜÂÎ ****)
-(* ¥È¥ì¡¼¥¹³«»ÏÅÀ ViewPoint ¤È¡¢¤½¤ÎÅÀ¤«¤é¤Î¥¹¥­¥ã¥óÊı¸ş¥Ù¥¯¥È¥ë *)
-(* Vscan ¤«¤é¡¢¸òÅÀ crashed_point ¤È¾×ÆÍ¤·¤¿¥ª¥Ö¥¸¥§¥¯¥È         *)
-(* crashed_object ¤òÊÖ¤¹¡£´Ø¿ô¼«ÂÎ¤ÎÊÖ¤êÃÍ¤Ï¸òÅÀ¤ÎÍ­Ìµ¤Î¿¿µ¶ÃÍ¡£ *)
+(**** ãƒˆãƒ¬ãƒ¼ã‚¹æœ¬ä½“ ****)
+(* ãƒˆãƒ¬ãƒ¼ã‚¹é–‹å§‹ç‚¹ ViewPoint ã¨ã€ãã®ç‚¹ã‹ã‚‰ã®ã‚¹ã‚­ãƒ£ãƒ³æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« *)
+(* Vscan ã‹ã‚‰ã€äº¤ç‚¹ crashed_point ã¨è¡çªã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ         *)
+(* crashed_object ã‚’è¿”ã™ã€‚é–¢æ•°è‡ªä½“ã®è¿”ã‚Šå€¤ã¯äº¤ç‚¹ã®æœ‰ç„¡ã®çœŸå½å€¤ã€‚ *)
 let rec judge_intersection dirvec = (
   tmin.(0) <- (1000000000.0);
   trace_or_matrix 0 (or_net.(0)) dirvec;
@@ -1360,7 +1360,7 @@ let rec judge_intersection dirvec = (
 in
 
 (******************************************************************************
-   ¸÷Àş¤ÈÊªÂÎ¤Î¸òº¹È½Äê ¹âÂ®ÈÇ
+   å…‰ç·šã¨ç‰©ä½“ã®äº¤å·®åˆ¤å®š é«˜é€Ÿç‰ˆ
  *****************************************************************************)
 
 let rec solve_each_element_fast iand_ofs and_group dirvec =
@@ -1371,8 +1371,8 @@ let rec solve_each_element_fast iand_ofs and_group dirvec =
     let t0 = solver_fast2 iobj dirvec in
     if t0 <> 0 then
       (
-        (* ¸òÅÀ¤¬¤¢¤ë»ş¤Ï¡¢¤½¤Î¸òÅÀ¤¬Â¾¤ÎÍ×ÁÇ¤ÎÃæ¤Ë´Ş¤Ş¤ì¤ë¤«¤É¤¦¤«Ä´¤Ù¤ë¡£*)
-        (* º£¤Ş¤Ç¤ÎÃæ¤ÇºÇ¾®¤Î t ¤ÎÃÍ¤ÈÈæ¤Ù¤ë¡£*)
+        (* äº¤ç‚¹ãŒã‚ã‚‹æ™‚ã¯ã€ãã®äº¤ç‚¹ãŒä»–ã®è¦ç´ ã®ä¸­ã«å«ã¾ã‚Œã‚‹ã‹ã©ã†ã‹èª¿ã¹ã‚‹ã€‚*)
+        (* ä»Šã¾ã§ã®ä¸­ã§æœ€å°ã® t ã®å€¤ã¨æ¯”ã¹ã‚‹ã€‚*)
        let t0p = solver_dist.(0) in
 
        if (fless 0.0 t0p) then
@@ -1396,14 +1396,14 @@ let rec solve_each_element_fast iand_ofs and_group dirvec =
        solve_each_element_fast (iand_ofs + 1) and_group dirvec
       )
     else
-       (* ¸òÅÀ¤¬¤Ê¤¯¡¢¤·¤«¤â¤½¤ÎÊªÂÎ¤ÏÆâÂ¦¤¬¿¿¤Ê¤é¤³¤ì°Ê¾å¸òÅÀ¤Ï¤Ê¤¤ *)
+       (* äº¤ç‚¹ãŒãªãã€ã—ã‹ã‚‚ãã®ç‰©ä½“ã¯å†…å´ãŒçœŸãªã‚‰ã“ã‚Œä»¥ä¸Šäº¤ç‚¹ã¯ãªã„ *)
        if o_isinvert (objects.(iobj)) then
 	 solve_each_element_fast (iand_ofs + 1) and_group dirvec
        else ()
    )
 in
 
-(**** 1¤Ä¤Î OR-group ¤Ë¤Ä¤¤¤Æ¸òÅÀ¤òÄ´¤Ù¤ë ****)
+(**** 1ã¤ã® OR-group ã«ã¤ã„ã¦äº¤ç‚¹ã‚’èª¿ã¹ã‚‹ ****)
 let rec solve_one_or_network_fast ofs or_group dirvec =
   let head = or_group.(ofs) in
   if head <> -1 then (
@@ -1413,18 +1413,18 @@ let rec solve_one_or_network_fast ofs or_group dirvec =
    ) else ()
 in
 
-(**** OR¥Ş¥È¥ê¥¯¥¹Á´ÂÎ¤Ë¤Ä¤¤¤Æ¸òÅÀ¤òÄ´¤Ù¤ë¡£****)
+(**** ORãƒãƒˆãƒªã‚¯ã‚¹å…¨ä½“ã«ã¤ã„ã¦äº¤ç‚¹ã‚’èª¿ã¹ã‚‹ã€‚****)
 let rec trace_or_matrix_fast ofs or_network dirvec =
   let head = or_network.(ofs) in
   let range_primitive = head.(0) in
-  if range_primitive = -1 then (* Á´¥ª¥Ö¥¸¥§¥¯¥È½ªÎ» *)
+  if range_primitive = -1 then (* å…¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆçµ‚äº† *)
     ()
   else (
-    if range_primitive = 99 (* range primitive ¤Ê¤· *)
+    if range_primitive = 99 (* range primitive ãªã— *)
     then solve_one_or_network_fast 1 head dirvec
     else
       (
-	(* range primitive ¤Î¾×ÆÍ¤·¤Ê¤±¤ì¤Ğ¸òÅÀ¤Ï¤Ê¤¤ *)
+	(* range primitive ã®è¡çªã—ãªã‘ã‚Œã°äº¤ç‚¹ã¯ãªã„ *)
        let t = solver_fast2 range_primitive dirvec in
        if t <> 0 then
 	 let tp = solver_dist.(0) in
@@ -1437,7 +1437,7 @@ let rec trace_or_matrix_fast ofs or_network dirvec =
    )
 in
 
-(**** ¥È¥ì¡¼¥¹ËÜÂÎ ****)
+(**** ãƒˆãƒ¬ãƒ¼ã‚¹æœ¬ä½“ ****)
 let rec judge_intersection_fast dirvec =
 (
   tmin.(0) <- (1000000000.0);
@@ -1451,30 +1451,30 @@ let rec judge_intersection_fast dirvec =
 in
 
 (******************************************************************************
-   ÊªÂÎ¤È¸÷¤Î¸òº¹ÅÀ¤ÎË¡Àş¥Ù¥¯¥È¥ë¤òµá¤á¤ë´Ø¿ô
+   ç‰©ä½“ã¨å…‰ã®äº¤å·®ç‚¹ã®æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ±‚ã‚ã‚‹é–¢æ•°
  *****************************************************************************)
 
-(**** ¸òÅÀ¤«¤éË¡Àş¥Ù¥¯¥È¥ë¤ò·×»»¤¹¤ë ****)
-(* ¾×ÆÍ¤·¤¿¥ª¥Ö¥¸¥§¥¯¥È¤òµá¤á¤¿ºİ¤Î solver ¤ÎÊÖ¤êÃÍ¤ò *)
-(* ÊÑ¿ô intsec_rectside ·ĞÍ³¤ÇÅÏ¤·¤Æ¤ä¤ëÉ¬Í×¤¬¤¢¤ë¡£  *)
-(* nvector ¤â¥°¥í¡¼¥Ğ¥ë¡£ *)
+(**** äº¤ç‚¹ã‹ã‚‰æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—ã™ã‚‹ ****)
+(* è¡çªã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ±‚ã‚ãŸéš›ã® solver ã®è¿”ã‚Šå€¤ã‚’ *)
+(* å¤‰æ•° intsec_rectside çµŒç”±ã§æ¸¡ã—ã¦ã‚„ã‚‹å¿…è¦ãŒã‚ã‚‹ã€‚  *)
+(* nvector ã‚‚ã‚°ãƒ­ãƒ¼ãƒãƒ«ã€‚ *)
 
 let rec get_nvector_rect dirvec =
   let rectside = intsec_rectside.(0) in
-  (* solver ¤ÎÊÖ¤êÃÍ¤Ï¤Ö¤Ä¤«¤Ã¤¿ÌÌ¤ÎÊı¸ş¤ò¼¨¤¹ *)
+  (* solver ã®è¿”ã‚Šå€¤ã¯ã¶ã¤ã‹ã£ãŸé¢ã®æ–¹å‘ã‚’ç¤ºã™ *)
   vecbzero nvector;
   nvector.(rectside-1) <- fneg (sgn (dirvec.(rectside-1)))
 in
 
-(* Ê¿ÌÌ *)
+(* å¹³é¢ *)
 let rec get_nvector_plane m =
-  (* m_invert ¤Ï¾ï¤Ë true ¤Î¤Ï¤º *)
+  (* m_invert ã¯å¸¸ã« true ã®ã¯ãš *)
   nvector.(0) <- fneg (o_param_a m); (* if m_invert then fneg m_a else m_a *)
   nvector.(1) <- fneg (o_param_b m);
   nvector.(2) <- fneg (o_param_c m)
 in
 
-(* 2¼¡¶ÊÌÌ :  grad x^t A x = 2 A x ¤òÀµµ¬²½¤¹¤ë *)
+(* 2æ¬¡æ›²é¢ :  grad x^t A x = 2 A x ã‚’æ­£è¦åŒ–ã™ã‚‹ *)
 let rec get_nvector_second m =
   let p0 = intersection_point.(0) -. o_param_x m in
   let p1 = intersection_point.(1) -. o_param_y m in
@@ -1503,25 +1503,25 @@ let rec get_nvector m dirvec =
     get_nvector_rect dirvec
   else if m_shape = 2 then
     get_nvector_plane m
-  else (* 2¼¡¶ÊÌÌ or ¿íÂÎ *)
+  else (* 2æ¬¡æ›²é¢ or éŒä½“ *)
     get_nvector_second m
   (* retval = nvector *)
 in
 
 (******************************************************************************
-   ÊªÂÎÉ½ÌÌ¤Î¿§(¿§ÉÕ¤­³È»¶È¿¼ÍÎ¨)¤òµá¤á¤ë
+   ç‰©ä½“è¡¨é¢ã®è‰²(è‰²ä»˜ãæ‹¡æ•£åå°„ç‡)ã‚’æ±‚ã‚ã‚‹
  *****************************************************************************)
 
-(**** ¸òÅÀ¾å¤Î¥Æ¥¯¥¹¥Á¥ã¤Î¿§¤ò·×»»¤¹¤ë ****)
+(**** äº¤ç‚¹ä¸Šã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®è‰²ã‚’è¨ˆç®—ã™ã‚‹ ****)
 let rec utexture m p =
   let m_tex = o_texturetype m in
-  (* ´ğËÜ¤Ï¥ª¥Ö¥¸¥§¥¯¥È¤Î¿§ *)
+  (* åŸºæœ¬ã¯ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®è‰² *)
   texture_color.(0) <- o_color_red m;
   texture_color.(1) <- o_color_green m;
   texture_color.(2) <- o_color_blue m;
   if m_tex = 1 then
     (
-     (* zxÊı¸ş¤Î¥Á¥§¥Ã¥«¡¼ÌÏÍÍ (G) *)
+     (* zxæ–¹å‘ã®ãƒã‚§ãƒƒã‚«ãƒ¼æ¨¡æ§˜ (G) *)
      let w1 = p.(0) -. o_param_x m in
      let flag1 =
        let d1 = (floor (w1 *. 0.05)) *. 20.0 in
@@ -1538,14 +1538,14 @@ let rec utexture m p =
        else (if flag2 then 0.0 else 255.0)
     )
   else if m_tex = 2 then
-    (* y¼´Êı¸ş¤Î¥¹¥È¥é¥¤¥× (R-G) *)
+    (* yè»¸æ–¹å‘ã®ã‚¹ãƒˆãƒ©ã‚¤ãƒ— (R-G) *)
     (
       let w2 = fsqr (sin (p.(1) *. 0.25)) in
       texture_color.(0) <- 255.0 *. w2;
       texture_color.(1) <- 255.0 *. (1.0 -. w2)
     )
   else if m_tex = 3 then
-    (* ZXÌÌÊı¸ş¤ÎÆ±¿´±ß (G-B) *)
+    (* ZXé¢æ–¹å‘ã®åŒå¿ƒå†† (G-B) *)
     (
       let w1 = p.(0) -. o_param_x m in
       let w3 = p.(2) -. o_param_z m in
@@ -1556,7 +1556,7 @@ let rec utexture m p =
       texture_color.(2) <- (1.0 -. cws) *. 255.0
     )
   else if m_tex = 4 then (
-    (* µåÌÌ¾å¤ÎÈÃÅÀ (B) *)
+    (* çƒé¢ä¸Šã®æ–‘ç‚¹ (B) *)
     let w1 = (p.(0) -. o_param_x m) *. (sqrt (o_param_a m)) in
     let w3 = (p.(2) -. o_param_z m) *. (sqrt (o_param_c m)) in
     let w4 = (fsqr w1) +. (fsqr w3) in
@@ -1587,18 +1587,18 @@ let rec utexture m p =
 in
 
 (******************************************************************************
-   ¾×ÆÍÅÀ¤ËÅö¤¿¤ë¸÷¸»¤ÎÄ¾ÀÜ¸÷¤ÈÈ¿¼Í¸÷¤ò·×»»¤¹¤ë´Ø¿ô·²
+   è¡çªç‚¹ã«å½“ãŸã‚‹å…‰æºã®ç›´æ¥å…‰ã¨åå°„å…‰ã‚’è¨ˆç®—ã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* Åö¤¿¤Ã¤¿¸÷¤Ë¤è¤ë³È»¶¸÷¤ÈÉÔ´°Á´¶ÀÌÌÈ¿¼Í¸÷¤Ë¤è¤ë´óÍ¿¤òRGBÃÍ¤Ë²Ã»» *)
+(* å½“ãŸã£ãŸå…‰ã«ã‚ˆã‚‹æ‹¡æ•£å…‰ã¨ä¸å®Œå…¨é¡é¢åå°„å…‰ã«ã‚ˆã‚‹å¯„ä¸ã‚’RGBå€¤ã«åŠ ç®— *)
 let rec add_light bright hilight hilight_scale =
 
-  (* ³È»¶¸÷ *)
+  (* æ‹¡æ•£å…‰ *)
   if fispos bright then
     vecaccum rgb bright texture_color
   else ();
 
-  (* ÉÔ´°Á´¶ÀÌÌÈ¿¼Í cos ^4 ¥â¥Ç¥ë *)
+  (* ä¸å®Œå…¨é¡é¢åå°„ cos ^4 ãƒ¢ãƒ‡ãƒ« *)
   if fispos hilight then (
     let ihl = fsqr (fsqr hilight) *. hilight_scale in
     rgb.(0) <- rgb.(0) +. ihl;
@@ -1607,20 +1607,20 @@ let rec add_light bright hilight hilight_scale =
   ) else ()
 in
 
-(* ³ÆÊªÂÎ¤Ë¤è¤ë¸÷¸»¤ÎÈ¿¼Í¸÷¤ò·×»»¤¹¤ë´Ø¿ô(Ä¾ÊıÂÎ¤ÈÊ¿ÌÌ¤Î¤ß) *)
+(* å„ç‰©ä½“ã«ã‚ˆã‚‹å…‰æºã®åå°„å…‰ã‚’è¨ˆç®—ã™ã‚‹é–¢æ•°(ç›´æ–¹ä½“ã¨å¹³é¢ã®ã¿) *)
 let rec trace_reflections index diffuse hilight_scale dirvec =
 
   if index >= 0 then (
-    let rinfo = reflections.(index) in (* ¶ÀÊ¿ÌÌ¤ÎÈ¿¼Í¾ğÊó *)
-    let dvec = r_dvec rinfo in    (* È¿¼Í¸÷¤ÎÊı¸ş¥Ù¥¯¥È¥ë(¸÷¤ÈµÕ¸ş¤­ *)
+    let rinfo = reflections.(index) in (* é¡å¹³é¢ã®åå°„æƒ…å ± *)
+    let dvec = r_dvec rinfo in    (* åå°„å…‰ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«(å…‰ã¨é€†å‘ã *)
 
-    (*È¿¼Í¸÷¤òµÕ¤Ë¤¿¤É¤ê¡¢¼Âºİ¤Ë¤½¤Î¶ÀÌÌ¤ËÅö¤¿¤ì¤Ğ¡¢È¿¼Í¸÷¤¬ÆÏ¤¯²ÄÇ½À­Í­¤ê *)
+    (*åå°„å…‰ã‚’é€†ã«ãŸã©ã‚Šã€å®Ÿéš›ã«ãã®é¡é¢ã«å½“ãŸã‚Œã°ã€åå°„å…‰ãŒå±Šãå¯èƒ½æ€§æœ‰ã‚Š *)
     if judge_intersection_fast dvec then
       let surface_id = intersected_object_id.(0) * 4 + intsec_rectside.(0) in
       if surface_id = r_surface_id rinfo then
-	(* ¶ÀÌÌ¤È¤Î¾×ÆÍÅÀ¤¬¸÷¸»¤Î±Æ¤Ë¤Ê¤Ã¤Æ¤¤¤Ê¤±¤ì¤ĞÈ¿¼Í¸÷¤ÏÆÏ¤¯ *)
+	(* é¡é¢ã¨ã®è¡çªç‚¹ãŒå…‰æºã®å½±ã«ãªã£ã¦ã„ãªã‘ã‚Œã°åå°„å…‰ã¯å±Šã *)
         if not (shadow_check_one_or_matrix 0 or_net.(0)) then
-	  (* ÆÏ¤¤¤¿È¿¼Í¸÷¤Ë¤è¤ë RGBÀ®Ê¬¤Ø¤Î´óÍ¿¤ò²Ã»» *)
+	  (* å±Šã„ãŸåå°„å…‰ã«ã‚ˆã‚‹ RGBæˆåˆ†ã¸ã®å¯„ä¸ã‚’åŠ ç®— *)
           let p = veciprod nvector (d_vec dvec) in
           let scale = r_bright rinfo in
           let bright = scale *. diffuse *. p in
@@ -1635,28 +1635,28 @@ let rec trace_reflections index diffuse hilight_scale dirvec =
 in
 
 (******************************************************************************
-   Ä¾ÀÜ¸÷¤òÄÉÀ×¤¹¤ë
+   ç›´æ¥å…‰ã‚’è¿½è·¡ã™ã‚‹
  *****************************************************************************)
 let rec trace_ray nref energy dirvec pixel dist =
   if nref <= 4 then (
     let surface_ids = p_surface_ids pixel in
     if judge_intersection dirvec then (
-    (* ¥ª¥Ö¥¸¥§¥¯¥È¤Ë¤Ö¤Ä¤«¤Ã¤¿¾ì¹ç *)
+    (* ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ã¶ã¤ã‹ã£ãŸå ´åˆ *)
       let obj_id = intersected_object_id.(0) in
       let obj = objects.(obj_id) in
       let m_surface = o_reflectiontype obj in
       let diffuse = o_diffuse obj *. energy in
 
-      get_nvector obj dirvec; (* Ë¡Àş¥Ù¥¯¥È¥ë¤ò get *)
-      veccpy startp intersection_point;  (* ¸òº¹ÅÀ¤ò¿·¤¿¤Ê¸÷¤ÎÈ¯¼ÍÅÀ¤È¤¹¤ë *)
-      utexture obj intersection_point; (*¥Æ¥¯¥¹¥Á¥ã¤ò·×»» *)
+      get_nvector obj dirvec; (* æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’ get *)
+      veccpy startp intersection_point;  (* äº¤å·®ç‚¹ã‚’æ–°ãŸãªå…‰ã®ç™ºå°„ç‚¹ã¨ã™ã‚‹ *)
+      utexture obj intersection_point; (*ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’è¨ˆç®— *)
 
-      (* pixel tuple¤Ë¾ğÊó¤ò³ÊÇ¼¤¹¤ë *)
+      (* pixel tupleã«æƒ…å ±ã‚’æ ¼ç´ã™ã‚‹ *)
       surface_ids.(nref) <- obj_id * 4 + intsec_rectside.(0);
       let intersection_points = p_intersection_points pixel in
       veccpy intersection_points.(nref) intersection_point;
 
-      (* ³È»¶È¿¼ÍÎ¨¤¬0.5°Ê¾å¤Î¾ì¹ç¤Î¤ß´ÖÀÜ¸÷¤Î¥µ¥ó¥×¥ê¥ó¥°¤ò¹Ô¤¦ *)
+      (* æ‹¡æ•£åå°„ç‡ãŒ0.5ä»¥ä¸Šã®å ´åˆã®ã¿é–“æ¥å…‰ã®ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã‚’è¡Œã† *)
       let calc_diffuse = p_calc_diffuse pixel in
       if fless (o_diffuse obj) 0.5 then
 	calc_diffuse.(nref) <- false
@@ -1670,30 +1670,30 @@ let rec trace_ray nref energy dirvec pixel dist =
        );
 
       let w = (-2.0) *. veciprod dirvec nvector in
-      (* È¿¼Í¸÷¤ÎÊı¸ş¤Ë¥È¥ì¡¼¥¹Êı¸ş¤òÊÑ¹¹ *)
+      (* åå°„å…‰ã®æ–¹å‘ã«ãƒˆãƒ¬ãƒ¼ã‚¹æ–¹å‘ã‚’å¤‰æ›´ *)
       vecaccum dirvec w nvector;
 
       let hilight_scale = energy *. o_hilight obj in
 
-      (* ¸÷¸»¸÷¤¬Ä¾ÀÜÆÏ¤¯¾ì¹ç¡¢RGBÀ®Ê¬¤Ë¤³¤ì¤ò²ÃÌ£¤¹¤ë *)
+      (* å…‰æºå…‰ãŒç›´æ¥å±Šãå ´åˆã€RGBæˆåˆ†ã«ã“ã‚Œã‚’åŠ å‘³ã™ã‚‹ *)
       if not (shadow_check_one_or_matrix 0 or_net.(0)) then
         let bright = fneg (veciprod nvector light) *. diffuse in
         let hilight = fneg (veciprod dirvec light) in
         add_light bright hilight hilight_scale
       else ();
 
-      (* ¸÷¸»¸÷¤ÎÈ¿¼Í¸÷¤¬Ìµ¤¤¤«Ãµ¤¹ *)
+      (* å…‰æºå…‰ã®åå°„å…‰ãŒç„¡ã„ã‹æ¢ã™ *)
       setup_startp intersection_point;
       trace_reflections (n_reflections.(0)-1) diffuse hilight_scale dirvec;
 
-      (* ½Å¤ß¤¬ 0.1¤è¤êÂ¿¤¯»Ä¤Ã¤Æ¤¤¤¿¤é¡¢¶ÀÌÌÈ¿¼Í¸µ¤òÄÉÀ×¤¹¤ë *)
+      (* é‡ã¿ãŒ 0.1ã‚ˆã‚Šå¤šãæ®‹ã£ã¦ã„ãŸã‚‰ã€é¡é¢åå°„å…ƒã‚’è¿½è·¡ã™ã‚‹ *)
       if fless 0.1 energy then (
 
 	if(nref < 4) then
 	  surface_ids.(nref+1) <- -1
 	else ();
 
-	if m_surface = 2 then (   (* ´°Á´¶ÀÌÌÈ¿¼Í *)
+	if m_surface = 2 then (   (* å®Œå…¨é¡é¢åå°„ *)
 	  let energy2 = energy *. (1.0 -. o_diffuse obj) in
 	  trace_ray (nref+1) energy2 dirvec pixel (dist +. tmin.(0))
 	 ) else ();
@@ -1701,16 +1701,16 @@ let rec trace_ray nref energy dirvec pixel dist =
        ) else ()
 
      ) else (
-      (* ¤É¤ÎÊªÂÎ¤Ë¤âÅö¤¿¤é¤Ê¤«¤Ã¤¿¾ì¹ç¡£¸÷¸»¤«¤é¤Î¸÷¤ò²ÃÌ£ *)
+      (* ã©ã®ç‰©ä½“ã«ã‚‚å½“ãŸã‚‰ãªã‹ã£ãŸå ´åˆã€‚å…‰æºã‹ã‚‰ã®å…‰ã‚’åŠ å‘³ *)
 
       surface_ids.(nref) <- -1;
 
       if nref <> 0 then (
 	let hl = fneg (veciprod dirvec light) in
-        (* 90¡ë¤òÄ¶¤¨¤ë¾ì¹ç¤Ï0 (¸÷¤Ê¤·) *)
+        (* 90Â°ã‚’è¶…ãˆã‚‹å ´åˆã¯0 (å…‰ãªã—) *)
 	if fispos hl then
 	  (
-	   (* ¥Ï¥¤¥é¥¤¥È¶¯ÅÙ¤Ï³ÑÅÙ¤Î cos^3 ¤ËÈæÎã *)
+	   (* ãƒã‚¤ãƒ©ã‚¤ãƒˆå¼·åº¦ã¯è§’åº¦ã® cos^3 ã«æ¯”ä¾‹ *)
 	   let ihl = fsqr hl *. hl *. energy *. beam.(0) in
 	   rgb.(0) <- rgb.(0) +. ihl;
 	   rgb.(1) <- rgb.(1) +. ihl;
@@ -1724,21 +1724,21 @@ in
 
 
 (******************************************************************************
-   ´ÖÀÜ¸÷¤òÄÉÀ×¤¹¤ë
+   é–“æ¥å…‰ã‚’è¿½è·¡ã™ã‚‹
  *****************************************************************************)
 
-(* ¤¢¤ëÅÀ¤¬ÆÃÄê¤ÎÊı¸ş¤«¤é¼õ¤±¤ë´ÖÀÜ¸÷¤Î¶¯¤µ¤ò·×»»¤¹¤ë *)
-(* ´ÖÀÜ¸÷¤ÎÊı¸ş¥Ù¥¯¥È¥ë dirvec¤Ë´Ø¤·¤Æ¤ÏÄê¿ô¥Æ¡¼¥Ö¥ë¤¬ºî¤é¤ì¤Æ¤ª¤ê¡¢¾×ÆÍÈ½Äê
-   ¤¬¹âÂ®¤Ë¹Ô¤ï¤ì¤ë¡£ÊªÂÎ¤ËÅö¤¿¤Ã¤¿¤é¡¢¤½¤Î¸å¤ÎÈ¿¼Í¤ÏÄÉÀ×¤·¤Ê¤¤ *)
+(* ã‚ã‚‹ç‚¹ãŒç‰¹å®šã®æ–¹å‘ã‹ã‚‰å—ã‘ã‚‹é–“æ¥å…‰ã®å¼·ã•ã‚’è¨ˆç®—ã™ã‚‹ *)
+(* é–“æ¥å…‰ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ« dirvecã«é–¢ã—ã¦ã¯å®šæ•°ãƒ†ãƒ¼ãƒ–ãƒ«ãŒä½œã‚‰ã‚Œã¦ãŠã‚Šã€è¡çªåˆ¤å®š
+   ãŒé«˜é€Ÿã«è¡Œã‚ã‚Œã‚‹ã€‚ç‰©ä½“ã«å½“ãŸã£ãŸã‚‰ã€ãã®å¾Œã®åå°„ã¯è¿½è·¡ã—ãªã„ *)
 let rec trace_diffuse_ray dirvec energy =
 
-  (* ¤É¤ì¤«¤ÎÊªÂÎ¤ËÅö¤¿¤ë¤«Ä´¤Ù¤ë *)
+  (* ã©ã‚Œã‹ã®ç‰©ä½“ã«å½“ãŸã‚‹ã‹èª¿ã¹ã‚‹ *)
   if judge_intersection_fast dirvec then
     let obj = objects.(intersected_object_id.(0)) in
     get_nvector obj (d_vec dirvec);
     utexture obj intersection_point;
 
-    (* ¤½¤ÎÊªÂÎ¤¬Êü¼Í¤¹¤ë¸÷¤Î¶¯¤µ¤òµá¤á¤ë¡£Ä¾ÀÜ¸÷¸»¸÷¤Î¤ß¤ò·×»» *)
+    (* ãã®ç‰©ä½“ãŒæ”¾å°„ã™ã‚‹å…‰ã®å¼·ã•ã‚’æ±‚ã‚ã‚‹ã€‚ç›´æ¥å…‰æºå…‰ã®ã¿ã‚’è¨ˆç®— *)
     if not (shadow_check_one_or_matrix 0 or_net.(0)) then
       let br =  fneg (veciprod nvector light) in
       let bright = (if fispos br then br else 0.0) in
@@ -1747,14 +1747,14 @@ let rec trace_diffuse_ray dirvec energy =
   else ()
 in
 
-(* ¤¢¤é¤«¤¸¤á·è¤á¤é¤ì¤¿Êı¸ş¥Ù¥¯¥È¥ë¤ÎÇÛÎó¤ËÂĞ¤·¡¢³Æ¥Ù¥¯¥È¥ë¤ÎÊı³Ñ¤«¤éÍè¤ë
-   ´ÖÀÜ¸÷¤Î¶¯¤µ¤ò¥µ¥ó¥×¥ê¥ó¥°¤·¤Æ²Ã»»¤¹¤ë *)
+(* ã‚ã‚‰ã‹ã˜ã‚æ±ºã‚ã‚‰ã‚ŒãŸæ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®é…åˆ—ã«å¯¾ã—ã€å„ãƒ™ã‚¯ãƒˆãƒ«ã®æ–¹è§’ã‹ã‚‰æ¥ã‚‹
+   é–“æ¥å…‰ã®å¼·ã•ã‚’ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã—ã¦åŠ ç®—ã™ã‚‹ *)
 let rec iter_trace_diffuse_rays dirvec_group nvector org index =
   if index >= 0 then (
     let p = veciprod (d_vec dirvec_group.(index)) nvector in
 
-    (* ÇÛÎó¤Î 2n ÈÖÌÜ¤È 2n+1 ÈÖÌÜ¤Ë¤Ï¸ß¤¤¤ËµÕ¸ş¤ÎÊı¸ş¥Ù¥¯¥È¥ë¤¬Æş¤Ã¤Æ¤¤¤ë
-       Ë¡Àş¥Ù¥¯¥È¥ë¤ÈÆ±¤¸¸ş¤­¤ÎÊª¤òÁª¤ó¤Ç»È¤¦ *)
+    (* é…åˆ—ã® 2n ç•ªç›®ã¨ 2n+1 ç•ªç›®ã«ã¯äº’ã„ã«é€†å‘ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ãŒå…¥ã£ã¦ã„ã‚‹
+       æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã¨åŒã˜å‘ãã®ç‰©ã‚’é¸ã‚“ã§ä½¿ã† *)
     if fisneg p then
       trace_diffuse_ray dirvec_group.(index + 1) (p /. -150.0)
     else
@@ -1764,17 +1764,17 @@ let rec iter_trace_diffuse_rays dirvec_group nvector org index =
    ) else ()
 in
 
-(* Í¿¤¨¤é¤ì¤¿Êı¸ş¥Ù¥¯¥È¥ë¤Î½¸¹ç¤ËÂĞ¤·¡¢¤½¤ÎÊı¸ş¤Î´ÖÀÜ¸÷¤ò¥µ¥ó¥×¥ê¥ó¥°¤¹¤ë *)
+(* ä¸ãˆã‚‰ã‚ŒãŸæ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®é›†åˆã«å¯¾ã—ã€ãã®æ–¹å‘ã®é–“æ¥å…‰ã‚’ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã™ã‚‹ *)
 let rec trace_diffuse_rays dirvec_group nvector org =
   setup_startp org;
-  (* ÇÛÎó¤Î 2n ÈÖÌÜ¤È 2n+1 ÈÖÌÜ¤Ë¤Ï¸ß¤¤¤ËµÕ¸ş¤ÎÊı¸ş¥Ù¥¯¥È¥ë¤¬Æş¤Ã¤Æ¤¤¤Æ¡¢
-     Ë¡Àş¥Ù¥¯¥È¥ë¤ÈÆ±¤¸¸ş¤­¤ÎÊª¤Î¤ß¥µ¥ó¥×¥ê¥ó¥°¤Ë»È¤ï¤ì¤ë *)
-  (* Á´Éô¤Ç 120 / 2 = 60ËÜ¤Î¥Ù¥¯¥È¥ë¤òÄÉÀ× *)
+  (* é…åˆ—ã® 2n ç•ªç›®ã¨ 2n+1 ç•ªç›®ã«ã¯äº’ã„ã«é€†å‘ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ãŒå…¥ã£ã¦ã„ã¦ã€
+     æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã¨åŒã˜å‘ãã®ç‰©ã®ã¿ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã«ä½¿ã‚ã‚Œã‚‹ *)
+  (* å…¨éƒ¨ã§ 120 / 2 = 60æœ¬ã®ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¿½è·¡ *)
   iter_trace_diffuse_rays dirvec_group nvector org 118
 in
 
-(* È¾µåÊı¸ş¤ÎÁ´Éô¤Ç300ËÜ¤Î¥Ù¥¯¥È¥ë¤Î¤¦¤Á¡¢¤Ş¤ÀÄÉÀ×¤·¤Æ¤¤¤Ê¤¤»Ä¤ê¤Î240ËÜ¤Î
-   ¥Ù¥¯¥È¥ë¤Ë¤Ä¤¤¤Æ´ÖÀÜ¸÷ÄÉÀ×¤¹¤ë¡£60ËÜ¤Î¥Ù¥¯¥È¥ëÄÉÀ×¤ò4¥»¥Ã¥È¹Ô¤¦ *)
+(* åŠçƒæ–¹å‘ã®å…¨éƒ¨ã§300æœ¬ã®ãƒ™ã‚¯ãƒˆãƒ«ã®ã†ã¡ã€ã¾ã è¿½è·¡ã—ã¦ã„ãªã„æ®‹ã‚Šã®240æœ¬ã®
+   ãƒ™ã‚¯ãƒˆãƒ«ã«ã¤ã„ã¦é–“æ¥å…‰è¿½è·¡ã™ã‚‹ã€‚60æœ¬ã®ãƒ™ã‚¯ãƒˆãƒ«è¿½è·¡ã‚’4ã‚»ãƒƒãƒˆè¡Œã† *)
 let rec trace_diffuse_ray_80percent group_id nvector org =
 
   if group_id <> 0 then
@@ -1799,8 +1799,8 @@ let rec trace_diffuse_ray_80percent group_id nvector org =
 
 in
 
-(* ¾å²¼º¸±¦4ÅÀ¤Î´ÖÀÜ¸÷ÄÉÀ×·ë²Ì¤ò»È¤ï¤º¡¢300ËÜÁ´Éô¤Î¥Ù¥¯¥È¥ë¤òÄÉÀ×¤·¤Æ´ÖÀÜ¸÷¤ò
-   ·×»»¤¹¤ë¡£20%(60ËÜ)¤ÏÄÉÀ×ºÑ¤Ê¤Î¤Ç¡¢»Ä¤ê80%(240ËÜ)¤òÄÉÀ×¤¹¤ë *)
+(* ä¸Šä¸‹å·¦å³4ç‚¹ã®é–“æ¥å…‰è¿½è·¡çµæœã‚’ä½¿ã‚ãšã€300æœ¬å…¨éƒ¨ã®ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¿½è·¡ã—ã¦é–“æ¥å…‰ã‚’
+   è¨ˆç®—ã™ã‚‹ã€‚20%(60æœ¬)ã¯è¿½è·¡æ¸ˆãªã®ã§ã€æ®‹ã‚Š80%(240æœ¬)ã‚’è¿½è·¡ã™ã‚‹ *)
 let rec calc_diffuse_using_1point pixel nref =
 
   let ray20p = p_received_ray_20percent pixel in
@@ -1817,8 +1817,8 @@ let rec calc_diffuse_using_1point pixel nref =
 
 in
 
-(* ¼«Ê¬¤È¾å²¼º¸±¦4ÅÀ¤ÎÄÉÀ×·ë²Ì¤ò²Ã»»¤·¤Æ´ÖÀÜ¸÷¤òµá¤á¤ë¡£ËÜÍè¤Ï 300 ËÜ¤Î¸÷¤ò
-   ÄÉÀ×¤¹¤ëÉ¬Í×¤¬¤¢¤ë¤¬¡¢5ÅÀ²Ã»»¤¹¤ë¤Î¤Ç1ÅÀ¤¢¤¿¤ê60ËÜ(20%)ÄÉÀ×¤¹¤ë¤À¤±¤ÇºÑ¤à *)
+(* è‡ªåˆ†ã¨ä¸Šä¸‹å·¦å³4ç‚¹ã®è¿½è·¡çµæœã‚’åŠ ç®—ã—ã¦é–“æ¥å…‰ã‚’æ±‚ã‚ã‚‹ã€‚æœ¬æ¥ã¯ 300 æœ¬ã®å…‰ã‚’
+   è¿½è·¡ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ãŒã€5ç‚¹åŠ ç®—ã™ã‚‹ã®ã§1ç‚¹ã‚ãŸã‚Š60æœ¬(20%)è¿½è·¡ã™ã‚‹ã ã‘ã§æ¸ˆã‚€ *)
 
 let rec calc_diffuse_using_5points x prev cur next nref =
 
@@ -1839,10 +1839,10 @@ let rec calc_diffuse_using_5points x prev cur next nref =
 
 in
 
-(* ¾å²¼º¸±¦4ÅÀ¤ò»È¤ï¤º¤ËÄ¾ÀÜ¸÷¤Î³Æ¾×ÆÍÅÀ¤Ë¤ª¤±¤ë´ÖÀÜ¼õ¸÷¤ò·×»»¤¹¤ë *)
+(* ä¸Šä¸‹å·¦å³4ç‚¹ã‚’ä½¿ã‚ãšã«ç›´æ¥å…‰ã®å„è¡çªç‚¹ã«ãŠã‘ã‚‹é–“æ¥å—å…‰ã‚’è¨ˆç®—ã™ã‚‹ *)
 let rec do_without_neighbors pixel nref =
   if nref <= 4 then
-    (* ¾×ÆÍÌÌÈÖ¹æ¤¬Í­¸ú(ÈóÉé)¤«¥Á¥§¥Ã¥¯ *)
+    (* è¡çªé¢ç•ªå·ãŒæœ‰åŠ¹(éè² )ã‹ãƒã‚§ãƒƒã‚¯ *)
     let surface_ids = p_surface_ids pixel in
     if surface_ids.(nref) >= 0 then (
       let calc_diffuse = p_calc_diffuse pixel in
@@ -1854,7 +1854,7 @@ let rec do_without_neighbors pixel nref =
   else ()
 in
 
-(* ²èÁü¾å¤Ç¾å²¼º¸±¦¤ËÅÀ¤¬¤¢¤ë¤«(Í×¤¹¤ë¤Ë¡¢²èÁü¤ÎÃ¼¤ÇÌµ¤¤»ö)¤ò³ÎÇ§ *)
+(* ç”»åƒä¸Šã§ä¸Šä¸‹å·¦å³ã«ç‚¹ãŒã‚ã‚‹ã‹(è¦ã™ã‚‹ã«ã€ç”»åƒã®ç«¯ã§ç„¡ã„äº‹)ã‚’ç¢ºèª *)
 let rec neighbors_exist x y next =
   if (y + 1) < image_size.(1) then
     if y > 0 then
@@ -1872,8 +1872,8 @@ let rec get_surface_id pixel index =
   surface_ids.(index)
 in
 
-(* ¾å²¼º¸±¦4ÅÀ¤ÎÄ¾ÀÜ¸÷ÄÉÀ×¤Î·ë²Ì¡¢¼«Ê¬¤ÈÆ±¤¸ÌÌ¤Ë¾×ÆÍ¤·¤Æ¤¤¤ë¤«¤ò¥Á¥§¥Ã¥¯
-   ¤â¤·Æ±¤¸ÌÌ¤Ë¾×ÆÍ¤·¤Æ¤¤¤ì¤Ğ¡¢¤³¤ì¤é4ÅÀ¤Î·ë²Ì¤ò»È¤¦¤³¤È¤Ç·×»»¤ò¾ÊÎ¬½ĞÍè¤ë *)
+(* ä¸Šä¸‹å·¦å³4ç‚¹ã®ç›´æ¥å…‰è¿½è·¡ã®çµæœã€è‡ªåˆ†ã¨åŒã˜é¢ã«è¡çªã—ã¦ã„ã‚‹ã‹ã‚’ãƒã‚§ãƒƒã‚¯
+   ã‚‚ã—åŒã˜é¢ã«è¡çªã—ã¦ã„ã‚Œã°ã€ã“ã‚Œã‚‰4ç‚¹ã®çµæœã‚’ä½¿ã†ã“ã¨ã§è¨ˆç®—ã‚’çœç•¥å‡ºæ¥ã‚‹ *)
 let rec neighbors_are_available x prev cur next nref =
   let sid_center = get_surface_id cur.(x) nref in
 
@@ -1888,36 +1888,36 @@ let rec neighbors_are_available x prev cur next nref =
   else false
 in
 
-(* Ä¾ÀÜ¸÷¤Î³Æ¾×ÆÍÅÀ¤Ë¤ª¤±¤ë´ÖÀÜ¼õ¸÷¤Î¶¯¤µ¤ò¡¢¾å²¼º¸±¦4ÅÀ¤Î·ë²Ì¤ò»ÈÍÑ¤·¤Æ·×»»
-   ¤¹¤ë¡£¤â¤·¾å²¼º¸±¦4ÅÀ¤Î·×»»·ë²Ì¤ò»È¤¨¤Ê¤¤¾ì¹ç¤Ï¡¢¤½¤Î»şÅÀ¤Ç
-   do_without_neighbors¤ËÀÚ¤êÂØ¤¨¤ë *)
+(* ç›´æ¥å…‰ã®å„è¡çªç‚¹ã«ãŠã‘ã‚‹é–“æ¥å—å…‰ã®å¼·ã•ã‚’ã€ä¸Šä¸‹å·¦å³4ç‚¹ã®çµæœã‚’ä½¿ç”¨ã—ã¦è¨ˆç®—
+   ã™ã‚‹ã€‚ã‚‚ã—ä¸Šä¸‹å·¦å³4ç‚¹ã®è¨ˆç®—çµæœã‚’ä½¿ãˆãªã„å ´åˆã¯ã€ãã®æ™‚ç‚¹ã§
+   do_without_neighborsã«åˆ‡ã‚Šæ›¿ãˆã‚‹ *)
 
 let rec try_exploit_neighbors x y prev cur next nref =
   let pixel = cur.(x) in
   if nref <= 4 then
 
-    (* ¾×ÆÍÌÌÈÖ¹æ¤¬Í­¸ú(ÈóÉé)¤« *)
+    (* è¡çªé¢ç•ªå·ãŒæœ‰åŠ¹(éè² )ã‹ *)
     if get_surface_id pixel nref >= 0 then
-      (* ¼ş°Ï4ÅÀ¤òÊä´°¤Ë»È¤¨¤ë¤« *)
+      (* å‘¨å›²4ç‚¹ã‚’è£œå®Œã«ä½¿ãˆã‚‹ã‹ *)
       if neighbors_are_available x prev cur next nref then (
 
-	(* ´ÖÀÜ¼õ¸÷¤ò·×»»¤¹¤ë¥Õ¥é¥°¤¬Î©¤Ã¤Æ¤¤¤ì¤Ğ¼Âºİ¤Ë·×»»¤¹¤ë *)
+	(* é–“æ¥å—å…‰ã‚’è¨ˆç®—ã™ã‚‹ãƒ•ãƒ©ã‚°ãŒç«‹ã£ã¦ã„ã‚Œã°å®Ÿéš›ã«è¨ˆç®—ã™ã‚‹ *)
 	let calc_diffuse = p_calc_diffuse pixel in
         if calc_diffuse.(nref) then
 	  calc_diffuse_using_5points x prev cur next nref
 	else ();
 
-	(* ¼¡¤ÎÈ¿¼Í¾×ÆÍÅÀ¤Ø *)
+	(* æ¬¡ã®åå°„è¡çªç‚¹ã¸ *)
 	try_exploit_neighbors x y prev cur next (nref + 1)
       ) else
-	(* ¼ş°Ï4ÅÀ¤òÊä´°¤Ë»È¤¨¤Ê¤¤¤Î¤Ç¡¢¤³¤ì¤é¤ò»È¤ï¤Ê¤¤ÊıË¡¤ËÀÚ¤êÂØ¤¨¤ë *)
+	(* å‘¨å›²4ç‚¹ã‚’è£œå®Œã«ä½¿ãˆãªã„ã®ã§ã€ã“ã‚Œã‚‰ã‚’ä½¿ã‚ãªã„æ–¹æ³•ã«åˆ‡ã‚Šæ›¿ãˆã‚‹ *)
 	do_without_neighbors cur.(x) nref
     else ()
   else ()
 in
 
 (******************************************************************************
-   PPM¥Õ¥¡¥¤¥ë¤Î½ñ¤­¹ş¤ß´Ø¿ô
+   PPMãƒ•ã‚¡ã‚¤ãƒ«ã®æ›¸ãè¾¼ã¿é–¢æ•°
  *****************************************************************************)
 let rec write_ppm_header _ =
   (
@@ -1949,27 +1949,27 @@ let rec write_rgb _ =
 in
 
 (******************************************************************************
-   ¤¢¤ë¥é¥¤¥ó¤Î·×»»¤ËÉ¬Í×¤Ê¾ğÊó¤ò½¸¤á¤ë¤¿¤á¼¡¤Î¥é¥¤¥ó¤ÎÄÉÀ×¤ò¹Ô¤Ã¤Æ¤ª¤¯´Ø¿ô·²
+   ã‚ã‚‹ãƒ©ã‚¤ãƒ³ã®è¨ˆç®—ã«å¿…è¦ãªæƒ…å ±ã‚’é›†ã‚ã‚‹ãŸã‚æ¬¡ã®ãƒ©ã‚¤ãƒ³ã®è¿½è·¡ã‚’è¡Œã£ã¦ãŠãé–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* ´ÖÀÜ¸÷¤Î¥µ¥ó¥×¥ê¥ó¥°¤Ç¤Ï¾å²¼º¸±¦4ÅÀ¤Î·ë²Ì¤ò»È¤¦¤Î¤Ç¡¢¼¡¤Î¥é¥¤¥ó¤Î·×»»¤ò
-   ¹Ô¤ï¤Ê¤¤¤ÈºÇ½ªÅª¤Ê¥Ô¥¯¥»¥ë¤ÎÃÍ¤ò·×»»¤Ç¤­¤Ê¤¤ *)
+(* é–“æ¥å…‰ã®ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã§ã¯ä¸Šä¸‹å·¦å³4ç‚¹ã®çµæœã‚’ä½¿ã†ã®ã§ã€æ¬¡ã®ãƒ©ã‚¤ãƒ³ã®è¨ˆç®—ã‚’
+   è¡Œã‚ãªã„ã¨æœ€çµ‚çš„ãªãƒ”ã‚¯ã‚»ãƒ«ã®å€¤ã‚’è¨ˆç®—ã§ããªã„ *)
 
-(* ´ÖÀÜ¸÷¤ò 60ËÜ(20%)¤À¤±·×»»¤·¤Æ¤ª¤¯´Ø¿ô *)
+(* é–“æ¥å…‰ã‚’ 60æœ¬(20%)ã ã‘è¨ˆç®—ã—ã¦ãŠãé–¢æ•° *)
 let rec pretrace_diffuse_rays pixel nref =
   if nref <= 4 then
 
-    (* ÌÌÈÖ¹æ¤¬Í­¸ú¤« *)
+    (* é¢ç•ªå·ãŒæœ‰åŠ¹ã‹ *)
     let sid = get_surface_id pixel nref in
     if sid >= 0 then (
-      (* ´ÖÀÜ¸÷¤ò·×»»¤¹¤ë¥Õ¥é¥°¤¬Î©¤Ã¤Æ¤¤¤ë¤« *)
+      (* é–“æ¥å…‰ã‚’è¨ˆç®—ã™ã‚‹ãƒ•ãƒ©ã‚°ãŒç«‹ã£ã¦ã„ã‚‹ã‹ *)
       let calc_diffuse = p_calc_diffuse pixel in
       if calc_diffuse.(nref) then (
 	let group_id = p_group_id pixel in
 	vecbzero diffuse_ray;
 
-	(* 5¤Ä¤ÎÊı¸ş¥Ù¥¯¥È¥ë½¸¹ç(³Æ60ËÜ)¤«¤é¼«Ê¬¤Î¥°¥ë¡¼¥×ID¤ËÂĞ±ş¤¹¤ëÊª¤ò
-	   °ì¤ÄÁª¤ó¤ÇÄÉÀ× *)
+	(* 5ã¤ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«é›†åˆ(å„60æœ¬)ã‹ã‚‰è‡ªåˆ†ã®ã‚°ãƒ«ãƒ¼ãƒ—IDã«å¯¾å¿œã™ã‚‹ç‰©ã‚’
+	   ä¸€ã¤é¸ã‚“ã§è¿½è·¡ *)
 	let nvectors = p_nvectors pixel in
 	let intersection_points = p_intersection_points pixel in
 	trace_diffuse_rays
@@ -1984,7 +1984,7 @@ let rec pretrace_diffuse_rays pixel nref =
   else ()
 in
 
-(* ³Æ¥Ô¥¯¥»¥ë¤ËÂĞ¤·¤ÆÄ¾ÀÜ¸÷ÄÉÀ×¤È´ÖÀÜ¼õ¸÷¤Î20%Ê¬¤Î·×»»¤ò¹Ô¤¦ *)
+(* å„ãƒ”ã‚¯ã‚»ãƒ«ã«å¯¾ã—ã¦ç›´æ¥å…‰è¿½è·¡ã¨é–“æ¥å—å…‰ã®20%åˆ†ã®è¨ˆç®—ã‚’è¡Œã† *)
 
 let rec pretrace_pixels line x group_id lc0 lc1 lc2 =
   if x >= 0 then (
@@ -1997,12 +1997,12 @@ let rec pretrace_pixels line x group_id lc0 lc1 lc2 =
     vecbzero rgb;
     veccpy startp viewpoint;
 
-    (* Ä¾ÀÜ¸÷ÄÉÀ× *)
+    (* ç›´æ¥å…‰è¿½è·¡ *)
     trace_ray 0 1.0 ptrace_dirvec line.(x) 0.0;
     veccpy (p_rgb line.(x)) rgb;
     p_set_group_id line.(x) group_id;
 
-    (* ´ÖÀÜ¸÷¤Î20%¤òÄÉÀ× *)
+    (* é–“æ¥å…‰ã®20%ã‚’è¿½è·¡ *)
     pretrace_diffuse_rays line.(x) 0;
 
     pretrace_pixels line (x-1) (add_mod5 group_id 1) lc0 lc1 lc2
@@ -2010,11 +2010,11 @@ let rec pretrace_pixels line x group_id lc0 lc1 lc2 =
    ) else ()
 in
 
-(* ¤¢¤ë¥é¥¤¥ó¤Î³Æ¥Ô¥¯¥»¥ë¤ËÂĞ¤·Ä¾ÀÜ¸÷ÄÉÀ×¤È´ÖÀÜ¼õ¸÷20%Ê¬¤Î·×»»¤ò¤¹¤ë *)
+(* ã‚ã‚‹ãƒ©ã‚¤ãƒ³ã®å„ãƒ”ã‚¯ã‚»ãƒ«ã«å¯¾ã—ç›´æ¥å…‰è¿½è·¡ã¨é–“æ¥å—å…‰20%åˆ†ã®è¨ˆç®—ã‚’ã™ã‚‹ *)
 let rec pretrace_line line y group_id =
   let ydisp = scan_pitch.(0) *. float_of_int (y - image_center.(1)) in
 
-  (* ¥é¥¤¥ó¤ÎÃæ¿´¤Ë¸ş¤«¤¦¥Ù¥¯¥È¥ë¤ò·×»» *)
+  (* ãƒ©ã‚¤ãƒ³ã®ä¸­å¿ƒã«å‘ã‹ã†ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®— *)
   let lc0 = ydisp *. screeny_dir.(0) +. screenz_dir.(0) in
   let lc1 = ydisp *. screeny_dir.(1) +. screenz_dir.(1) in
   let lc2 = ydisp *. screeny_dir.(2) +. screenz_dir.(2) in
@@ -2023,30 +2023,30 @@ in
 
 
 (******************************************************************************
-   Ä¾ÀÜ¸÷ÄÉÀ×¤È´ÖÀÜ¸÷20%ÄÉÀ×¤Î·ë²Ì¤«¤éºÇ½ªÅª¤Ê¥Ô¥¯¥»¥ëÃÍ¤ò·×»»¤¹¤ë´Ø¿ô
+   ç›´æ¥å…‰è¿½è·¡ã¨é–“æ¥å…‰20%è¿½è·¡ã®çµæœã‹ã‚‰æœ€çµ‚çš„ãªãƒ”ã‚¯ã‚»ãƒ«å€¤ã‚’è¨ˆç®—ã™ã‚‹é–¢æ•°
  *****************************************************************************)
 
-(* ³Æ¥Ô¥¯¥»¥ë¤ÎºÇ½ªÅª¤Ê¥Ô¥¯¥»¥ëÃÍ¤ò·×»» *)
+(* å„ãƒ”ã‚¯ã‚»ãƒ«ã®æœ€çµ‚çš„ãªãƒ”ã‚¯ã‚»ãƒ«å€¤ã‚’è¨ˆç®— *)
 let rec scan_pixel x y prev cur next =
   if x < image_size.(0) then (
 
-    (* ¤Ş¤º¡¢Ä¾ÀÜ¸÷ÄÉÀ×¤ÇÆÀ¤é¤ì¤¿RGBÃÍ¤òÆÀ¤ë *)
+    (* ã¾ãšã€ç›´æ¥å…‰è¿½è·¡ã§å¾—ã‚‰ã‚ŒãŸRGBå€¤ã‚’å¾—ã‚‹ *)
     veccpy rgb (p_rgb cur.(x));
 
-    (* ¼¡¤Ë¡¢Ä¾ÀÜ¸÷¤Î³Æ¾×ÆÍÅÀ¤Ë¤Ä¤¤¤Æ¡¢´ÖÀÜ¼õ¸÷¤Ë¤è¤ë´óÍ¿¤ò²ÃÌ£¤¹¤ë *)
+    (* æ¬¡ã«ã€ç›´æ¥å…‰ã®å„è¡çªç‚¹ã«ã¤ã„ã¦ã€é–“æ¥å—å…‰ã«ã‚ˆã‚‹å¯„ä¸ã‚’åŠ å‘³ã™ã‚‹ *)
     if neighbors_exist x y next then
       try_exploit_neighbors x y prev cur next 0
     else
       do_without_neighbors cur.(x) 0;
 
-    (* ÆÀ¤é¤ì¤¿ÃÍ¤òPPM¥Õ¥¡¥¤¥ë¤Ë½ĞÎÏ *)
+    (* å¾—ã‚‰ã‚ŒãŸå€¤ã‚’PPMãƒ•ã‚¡ã‚¤ãƒ«ã«å‡ºåŠ› *)
     write_rgb ();
 
     scan_pixel (x + 1) y prev cur next
    ) else ()
 in
 
-(* °ì¥é¥¤¥óÊ¬¤Î¥Ô¥¯¥»¥ëÃÍ¤ò·×»» *)
+(* ä¸€ãƒ©ã‚¤ãƒ³åˆ†ã®ãƒ”ã‚¯ã‚»ãƒ«å€¤ã‚’è¨ˆç®— *)
 let rec scan_line y prev cur next group_id = (
 
   if y < image_size.(1) then (
@@ -2061,10 +2061,10 @@ let rec scan_line y prev cur next group_id = (
 in
 
 (******************************************************************************
-   ¥Ô¥¯¥»¥ë¤Î¾ğÊó¤ò³ÊÇ¼¤¹¤ë¥Ç¡¼¥¿¹½Â¤¤Î³ä¤êÅö¤Æ´Ø¿ô·²
+   ãƒ”ã‚¯ã‚»ãƒ«ã®æƒ…å ±ã‚’æ ¼ç´ã™ã‚‹ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã®å‰²ã‚Šå½“ã¦é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* 3¼¡¸µ¥Ù¥¯¥È¥ë¤Î5Í×ÁÇÇÛÎó¤ò³ä¤êÅö¤Æ *)
+(* 3æ¬¡å…ƒãƒ™ã‚¯ãƒˆãƒ«ã®5è¦ç´ é…åˆ—ã‚’å‰²ã‚Šå½“ã¦ *)
 let rec create_float5x3array _ = (
   let vec = create_array 3 0.0 in
   let array = create_array 5 vec in
@@ -2076,7 +2076,7 @@ let rec create_float5x3array _ = (
 )
 in
 
-(* ¥Ô¥¯¥»¥ë¤òÉ½¤¹tuple¤ò³ä¤êÅö¤Æ *)
+(* ãƒ”ã‚¯ã‚»ãƒ«ã‚’è¡¨ã™tupleã‚’å‰²ã‚Šå½“ã¦ *)
 let rec create_pixel _ =
   let m_rgb = create_array 3 0.0 in
   let m_isect_ps = create_float5x3array() in
@@ -2089,7 +2089,7 @@ let rec create_pixel _ =
   (m_rgb, m_isect_ps, m_sids, m_cdif, m_engy, m_r20p, m_gid, m_nvectors)
 in
 
-(* ²£Êı¸ş1¥é¥¤¥óÃæ¤Î³Æ¥Ô¥¯¥»¥ëÍ×ÁÇ¤ò³ä¤êÅö¤Æ¤ë *)
+(* æ¨ªæ–¹å‘1ãƒ©ã‚¤ãƒ³ä¸­ã®å„ãƒ”ã‚¯ã‚»ãƒ«è¦ç´ ã‚’å‰²ã‚Šå½“ã¦ã‚‹ *)
 let rec init_line_elements line n =
   if n >= 0 then (
     line.(n) <- create_pixel();
@@ -2098,26 +2098,26 @@ let rec init_line_elements line n =
     line
 in
 
-(* ²£Êı¸ş1¥é¥¤¥óÊ¬¤Î¥Ô¥¯¥»¥ëÇÛÎó¤òºî¤ë *)
+(* æ¨ªæ–¹å‘1ãƒ©ã‚¤ãƒ³åˆ†ã®ãƒ”ã‚¯ã‚»ãƒ«é…åˆ—ã‚’ä½œã‚‹ *)
 let rec create_pixelline _ =
   let line = create_array image_size.(0) (create_pixel()) in
   init_line_elements line (image_size.(0)-2)
 in
 
 (******************************************************************************
-   ´ÖÀÜ¸÷¤Î¥µ¥ó¥×¥ê¥ó¥°¤Ë¤Ä¤«¤¦Êı¸ş¥Ù¥¯¥È¥ë·²¤ò·×»»¤¹¤ë´Ø¿ô·²
+   é–“æ¥å…‰ã®ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã«ã¤ã‹ã†æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ç¾¤ã‚’è¨ˆç®—ã™ã‚‹é–¢æ•°ç¾¤
  *****************************************************************************)
 
-(* ¥Ù¥¯¥È¥ëÃ£¤¬½ĞÍè¤ë¤À¤±°ìÍÍ¤ËÊ¬ÉÛ¤¹¤ë¤è¤¦¡¢600ËÜ¤ÎÊı¸ş¥Ù¥¯¥È¥ë¤Î¸ş¤­¤òÄê¤á¤ë
-   Î©ÊıÂÎ¾å¤Î³ÆÌÌ¤Ë100ËÜ¤º¤ÄÊ¬ÉÛ¤µ¤»¡¢¤µ¤é¤Ë¡¢100ËÜ¤¬Î©ÊıÂÎ¾å¤ÎÌÌ¾å¤Ç10 x 10 ¤Î
-   ³Ê»Ò¾õ¤ËÊÂ¤Ö¤è¤¦¤ÊÇÛÎó¤ò»È¤¦¡£¤³¤ÎÇÛÎó¤Ç¤ÏÊı³Ñ¤Ë¤è¤ë¥Ù¥¯¥È¥ë¤ÎÌ©ÅÙ¤Îº¹¤¬
-   Âç¤­¤¤¤Î¤Ç¡¢¤³¤ì¤ËÊäÀµ¤ò²Ã¤¨¤¿¤â¤Î¤òºÇ½ªÅª¤ËÍÑ¤¤¤ë *)
+(* ãƒ™ã‚¯ãƒˆãƒ«é”ãŒå‡ºæ¥ã‚‹ã ã‘ä¸€æ§˜ã«åˆ†å¸ƒã™ã‚‹ã‚ˆã†ã€600æœ¬ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã®å‘ãã‚’å®šã‚ã‚‹
+   ç«‹æ–¹ä½“ä¸Šã®å„é¢ã«100æœ¬ãšã¤åˆ†å¸ƒã•ã›ã€ã•ã‚‰ã«ã€100æœ¬ãŒç«‹æ–¹ä½“ä¸Šã®é¢ä¸Šã§10 x 10 ã®
+   æ ¼å­çŠ¶ã«ä¸¦ã¶ã‚ˆã†ãªé…åˆ—ã‚’ä½¿ã†ã€‚ã“ã®é…åˆ—ã§ã¯æ–¹è§’ã«ã‚ˆã‚‹ãƒ™ã‚¯ãƒˆãƒ«ã®å¯†åº¦ã®å·®ãŒ
+   å¤§ãã„ã®ã§ã€ã“ã‚Œã«è£œæ­£ã‚’åŠ ãˆãŸã‚‚ã®ã‚’æœ€çµ‚çš„ã«ç”¨ã„ã‚‹ *)
 
 let rec tan x =
   sin(x) /. cos(x)
 in
 
-(* ¥Ù¥¯¥È¥ëÃ£¤¬½ĞÍè¤ë¤À¤±µåÌÌ¾õ¤Ë°ìÍÍ¤ËÊ¬ÉÛ¤¹¤ë¤è¤¦ºÂÉ¸¤òÊäÀµ¤¹¤ë *)
+(* ãƒ™ã‚¯ãƒˆãƒ«é”ãŒå‡ºæ¥ã‚‹ã ã‘çƒé¢çŠ¶ã«ä¸€æ§˜ã«åˆ†å¸ƒã™ã‚‹ã‚ˆã†åº§æ¨™ã‚’è£œæ­£ã™ã‚‹ *)
 let rec adjust_position h ratio =
   let l = sqrt(h*.h +. 0.1) in
   let tan_h = 1.0 /. l in
@@ -2126,7 +2126,7 @@ let rec adjust_position h ratio =
   tan_m *. l
 in
 
-(* ¥Ù¥¯¥È¥ëÃ£¤¬½ĞÍè¤ë¤À¤±µåÌÌ¾õ¤Ë°ìÍÍ¤ËÊ¬ÉÛ¤¹¤ë¤è¤¦¤Ê¸ş¤­¤ò·×»»¤¹¤ë *)
+(* ãƒ™ã‚¯ãƒˆãƒ«é”ãŒå‡ºæ¥ã‚‹ã ã‘çƒé¢çŠ¶ã«ä¸€æ§˜ã«åˆ†å¸ƒã™ã‚‹ã‚ˆã†ãªå‘ãã‚’è¨ˆç®—ã™ã‚‹ *)
 let rec calc_dirvec icount x y rx ry group_id index =
   if icount >= 5 then (
     let l = sqrt(fsqr x +. fsqr y +. 1.0) in
@@ -2134,7 +2134,7 @@ let rec calc_dirvec icount x y rx ry group_id index =
     let vy = y /. l in
     let vz = 1.0 /. l in
 
-    (* Î©ÊıÂÎÅª¤ËÂĞ¾Î¤ËÊ¬ÉÛ¤µ¤»¤ë *)
+    (* ç«‹æ–¹ä½“çš„ã«å¯¾ç§°ã«åˆ†å¸ƒã•ã›ã‚‹ *)
     let dgroup = dirvecs.(group_id) in
     vecset (d_vec dgroup.(index))    vx vy vz;
     vecset (d_vec dgroup.(index+40)) vx vz (fneg vy);
@@ -2147,31 +2147,31 @@ let rec calc_dirvec icount x y rx ry group_id index =
     calc_dirvec (icount + 1) x2 (adjust_position x2 ry) rx ry group_id index
 in
 
-(* Î©ÊıÂÎ¾å¤Î 10x10³Ê»Ò¤Î¹ÔÃæ¤Î³Æ¥Ù¥¯¥È¥ë¤ò·×»»¤¹¤ë *)
+(* ç«‹æ–¹ä½“ä¸Šã® 10x10æ ¼å­ã®è¡Œä¸­ã®å„ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—ã™ã‚‹ *)
 let rec calc_dirvecs col ry group_id index =
   if col >= 0 then (
-    (* º¸È¾Ê¬ *)
-    let rx = (float_of_int col) *. 0.2 -. 0.9 in (* Îó¤ÎºÂÉ¸ *)
+    (* å·¦åŠåˆ† *)
+    let rx = (float_of_int col) *. 0.2 -. 0.9 in (* åˆ—ã®åº§æ¨™ *)
     calc_dirvec 0 0.0 0.0 rx ry group_id index;
-    (* ±¦È¾Ê¬ *)
-    let rx2 = (float_of_int col) *. 0.2 +. 0.1 in (* Îó¤ÎºÂÉ¸ *)
+    (* å³åŠåˆ† *)
+    let rx2 = (float_of_int col) *. 0.2 +. 0.1 in (* åˆ—ã®åº§æ¨™ *)
     calc_dirvec 0 0.0 0.0 rx2 ry group_id (index + 2);
 
     calc_dirvecs (col - 1) ry (add_mod5 group_id 1) index
    ) else ()
 in
 
-(* Î©ÊıÂÎ¾å¤Î10x10³Ê»Ò¤Î³Æ¹Ô¤ËÂĞ¤·¥Ù¥¯¥È¥ë¤Î¸ş¤­¤ò·×»»¤¹¤ë *)
+(* ç«‹æ–¹ä½“ä¸Šã®10x10æ ¼å­ã®å„è¡Œã«å¯¾ã—ãƒ™ã‚¯ãƒˆãƒ«ã®å‘ãã‚’è¨ˆç®—ã™ã‚‹ *)
 let rec calc_dirvec_rows row group_id index =
   if row >= 0 then (
-    let ry = (float_of_int row) *. 0.2 -. 0.9 in (* ¹Ô¤ÎºÂÉ¸ *)
-    calc_dirvecs 4 ry group_id index; (* °ì¹ÔÊ¬·×»» *)
+    let ry = (float_of_int row) *. 0.2 -. 0.9 in (* è¡Œã®åº§æ¨™ *)
+    calc_dirvecs 4 ry group_id index; (* ä¸€è¡Œåˆ†è¨ˆç®— *)
     calc_dirvec_rows (row - 1) (add_mod5 group_id 2) (index + 4)
    ) else ()
 in
 
 (******************************************************************************
-   dirvec ¤Î¥á¥â¥ê³ä¤êÅö¤Æ¤ò¹Ô¤¦
+   dirvec ã®ãƒ¡ãƒ¢ãƒªå‰²ã‚Šå½“ã¦ã‚’è¡Œã†
  *****************************************************************************)
 
 
@@ -2197,7 +2197,7 @@ let rec create_dirvecs index =
 in
 
 (******************************************************************************
-   Êä½õ´Ø¿ôÃ£¤ò¸Æ¤Ó½Ğ¤·¤Ædirvec¤Î½é´ü²½¤ò¹Ô¤¦
+   è£œåŠ©é–¢æ•°é”ã‚’å‘¼ã³å‡ºã—ã¦dirvecã®åˆæœŸåŒ–ã‚’è¡Œã†
  *****************************************************************************)
 
 let rec init_dirvec_constants vecset index =
@@ -2221,19 +2221,19 @@ let rec init_dirvecs _ =
 in
 
 (******************************************************************************
-   ´°Á´¶ÀÌÌÈ¿¼ÍÀ®Ê¬¤ò»ı¤ÄÊªÂÎ¤ÎÈ¿¼Í¾ğÊó¤ò½é´ü²½¤¹¤ë
+   å®Œå…¨é¡é¢åå°„æˆåˆ†ã‚’æŒã¤ç‰©ä½“ã®åå°„æƒ…å ±ã‚’åˆæœŸåŒ–ã™ã‚‹
  *****************************************************************************)
 
-(* È¿¼ÍÊ¿ÌÌ¤òÄÉ²Ã¤¹¤ë *)
+(* åå°„å¹³é¢ã‚’è¿½åŠ ã™ã‚‹ *)
 let rec add_reflection index surface_id bright v0 v1 v2 =
   let dvec = create_dirvec() in
-  vecset (d_vec dvec) v0 v1 v2; (* È¿¼Í¸÷¤Î¸ş¤­ *)
+  vecset (d_vec dvec) v0 v1 v2; (* åå°„å…‰ã®å‘ã *)
   setup_dirvec_constants dvec;
 
   reflections.(index) <- (surface_id, dvec, bright)
 in
 
-(* Ä¾ÊıÂÎ¤Î³ÆÌÌ¤Ë¤Ä¤¤¤Æ¾ğÊó¤òÄÉ²Ã¤¹¤ë *)
+(* ç›´æ–¹ä½“ã®å„é¢ã«ã¤ã„ã¦æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹ *)
 let rec setup_rect_reflection obj_id obj =
   let sid = obj_id * 4 in
   let nr = n_reflections.(0) in
@@ -2247,7 +2247,7 @@ let rec setup_rect_reflection obj_id obj =
   n_reflections.(0) <- nr + 3
 in
 
-(* Ê¿ÌÌ¤Ë¤Ä¤¤¤Æ¾ğÊó¤òÄÉ²Ã¤¹¤ë *)
+(* å¹³é¢ã«ã¤ã„ã¦æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹ *)
 let rec setup_surface_reflection obj_id obj =
   let sid = obj_id * 4 + 1 in
   let nr = n_reflections.(0) in
@@ -2262,14 +2262,14 @@ let rec setup_surface_reflection obj_id obj =
 in
 
 
-(* ³Æ¥ª¥Ö¥¸¥§¥¯¥È¤ËÂĞ¤·¡¢È¿¼Í¤¹¤ëÊ¿ÌÌ¤¬¤¢¤ì¤Ğ¤½¤Î¾ğÊó¤òÄÉ²Ã¤¹¤ë *)
+(* å„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å¯¾ã—ã€åå°„ã™ã‚‹å¹³é¢ãŒã‚ã‚Œã°ãã®æƒ…å ±ã‚’è¿½åŠ ã™ã‚‹ *)
 let rec setup_reflections obj_id =
   if obj_id >= 0 then
     let obj = objects.(obj_id) in
     if o_reflectiontype obj = 2 then
       if fless (o_diffuse obj) 1.0 then
 	let m_shape = o_form obj in
-	(* Ä¾ÊıÂÎ¤ÈÊ¿ÌÌ¤Î¤ß¥µ¥İ¡¼¥È *)
+	(* ç›´æ–¹ä½“ã¨å¹³é¢ã®ã¿ã‚µãƒãƒ¼ãƒˆ *)
 	if m_shape = 1 then
 	  setup_rect_reflection obj_id obj
 	else if m_shape = 2 then
@@ -2281,10 +2281,10 @@ let rec setup_reflections obj_id =
 in
 
 (*****************************************************************************
-   Á´ÂÎ¤ÎÀ©¸æ
+   å…¨ä½“ã®åˆ¶å¾¡
  *****************************************************************************)
 
-(* ¥ì¥¤¥È¥ì¤Î³Æ¥¹¥Æ¥Ã¥×¤ò¹Ô¤¦´Ø¿ô¤ò½ç¼¡¸Æ¤Ó½Ğ¤¹ *)
+(* ãƒ¬ã‚¤ãƒˆãƒ¬ã®å„ã‚¹ãƒ†ãƒƒãƒ—ã‚’è¡Œã†é–¢æ•°ã‚’é †æ¬¡å‘¼ã³å‡ºã™ *)
 let rec rt size_x size_y =
 (
  image_size.(0) <- size_x;
