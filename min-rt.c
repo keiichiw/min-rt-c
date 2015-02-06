@@ -89,9 +89,14 @@ int **or_net; // or_net is an array of length 1 in min-rt.ml
 
 float solver_dist; // an array of length 1 in min-rt.ml
 
+vec_t  startp;
 vec_t  startp_fast;
 dvec_t light_dirvec;
 vec_t intersection_point;
+
+float tmin;
+int intersected_object_id;
+int intsec_rectside;
 
 /******************************************************************************
    ユーティリティー
@@ -1104,6 +1109,7 @@ float* setup_second_table(vec_t *v, obj_t *m) {
 }
 
 
+// iteration
 /* 各オブジェクトについて補助関数を呼んでテーブルを作る */
 void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
   if (index >= 0) {
@@ -1204,6 +1210,8 @@ bool is_outside(obj_t *m, float q0, float q1, float q2) {
   }
 }
 
+
+// iteration
 bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
   int head = iand[ofs];
   if (head == -1) {
@@ -1226,6 +1234,7 @@ bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
 /* 物体にぶつかる (=影にはいっている) か否かを判定する。*/
 
 /**** AND ネットワーク iand の影内かどうかの判定 ****/
+// iteration
 bool shadow_check_and_group(int iand_ofs, int *and_group) {
   if (and_group[iand_ofs] == -1) {
     return false;
@@ -1260,6 +1269,7 @@ bool shadow_check_and_group(int iand_ofs, int *and_group) {
 }
 
 /**** OR グループ or_group の影かどうかの判定 ****/
+// iteration
 bool shadow_check_one_or_group(int ofs, int *or_group) {
   int head = or_group[ofs];
   if (head == -1) {
@@ -1276,6 +1286,7 @@ bool shadow_check_one_or_group(int ofs, int *or_group) {
 }
 
 /**** OR グループの列のどれかの影に入っているかどうかの判定 ****/
+// iteration
 bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
   int *head = or_matrix[ofs];
   int range_primitive = head[0];
@@ -1298,5 +1309,183 @@ bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
     } else {
       return shadow_check_one_or_matrix(ofs + 1, or_matrix); /* 次の要素を試す */
     }
+  }
+}
+
+
+/******************************************************************************
+   光線と物体の交差判定
+*****************************************************************************/
+
+/**** あるANDネットワークが、レイトレースの方向に対し、****/
+/**** 交点があるかどうかを調べる。                    ****/
+// iteration
+void solve_each_element(int iand_ofs, int *and_group, dvec_t *dirvec) {
+  int iobj = and_group[iand_ofs];
+  if (iobj == -1) {
+    return;
+  } else {
+    int t0 = solver(iobj, dirvec, &startp);
+    if (t0 != 0) {
+      /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
+      /* 今までの中で最小の t の値と比べる。*/
+      float t0p = solver_dist;
+      if (0.0 < t0p) {
+        if (t0p < tmin) {
+          float t = t0p + 0.01;
+          vec_t *v = &dirvec->vec;
+          float q0 = v->x * t + startp.x;
+          float q1 = v->x * t + startp.y;
+          float q2 = v->x * t + startp.z;
+          if (check_all_inside(0, and_group, q0, q1, q2)) {
+            tmin = t;
+            vecset(&intersection_point, q0, q1, q2);
+            intersected_object_id = iobj;
+            intsec_rectside = t0;
+          }
+        }
+      }
+      solve_each_element(iand_ofs + 1, and_group, dirvec);
+    } else {
+      /* 交点がなく、しかもその物体は内側が真ならこれ以上交点はない */
+      if (o_isinvert(&objects[iobj])) {
+        solve_each_element(iand_ofs + 1, and_group, dirvec);
+      }
+    }
+  }
+}
+
+
+/**** 1つの OR-group について交点を調べる ****/
+// iteraion
+void solve_one_or_network(int ofs, int *or_group, dvec_t *dirvec) {
+  int head = or_group[ofs];
+  if (head != -1) {
+    int *and_group = and_net[head];
+    solve_each_element(0, and_group, dirvec);
+    solve_one_or_network(ofs + 1, or_group, dirvec);
+  }
+}
+
+
+/**** ORマトリクス全体について交点を調べる。****/
+// iteration
+void trace_or_matrix(int ofs, int **or_network, dvec_t *dirvec) {
+  int *head = or_network[ofs];
+  int range_primitive = head[0];
+  if (range_primitive == -1) { /* 全オブジェクト終了 */
+    return;
+  } else {
+    /* range primitive の衝突しなければ交点はない */
+    float t = solver(range_primitive, dirvec, &startp);
+    if (t != 0) {
+      float tp = solver_dist;
+      if (tp < tmin) {
+        solve_one_or_network(1, head, dirvec);
+      }
+    }
+    trace_or_matrix(ofs + 1, or_network, dirvec);
+  }
+}
+
+/**** トレース本体 ****/
+/* トレース開始点 ViewPoint と、その点からのスキャン方向ベクトル */
+/* Vscan から、交点 crashed_point と衝突したオブジェクト        */
+/* crashed_object を返す。関数自体の返り値は交点の有無の真偽値。 */
+bool judge_intersection(dvec_t *dirvec) {
+  float tmin = 1000000000.0;
+  float t;
+  trace_or_matrix(0, or_net, dirvec);
+  t = tmin;
+  if (-0.1 < t) {
+    return t < 100000000.0;
+  }
+  return false;
+}
+
+/******************************************************************************
+   光線と物体の交差判定 高速版
+*****************************************************************************/
+
+// iteration
+void solve_each_element_fast(int iand_ofs, int *and_group, dvec_t *dirvec) {
+  vec_t *vec = d_vec(dirvec);
+  int iobj = and_group[iand_ofs];
+  if (iobj == -1) {
+    return;
+  } else {
+    float t0 = solver_fast2(iobj, dirvec);
+    if (t0 != 0) {
+      /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
+      /* 今までの中で最小の t の値と比べる。*/
+      float t0p = solver_dist;
+      if (0.0 < t0p) {
+        if (t0p < tmin) {
+          float t  = t0p + 0.01;
+          float q0 = vec->x * t + startp_fast.x;
+          float q1 = vec->y * t + startp_fast.y;
+          float q2 = vec->z * t + startp_fast.z;
+          if (check_all_inside(0, and_group, q0, q1, q2)) {
+            tmin = t;
+            vecset(&intersection_point, q0, q1, q2);
+            intersected_object_id = iobj;
+            intsec_rectside = t0;
+          }
+        }
+      }
+      solve_each_element_fast(iand_ofs + 1, and_group, dirvec);
+    } else {
+      /* 交点がなく、しかもその物体は内側が真ならこれ以上交点はない */
+      if (o_isinvert(&objects[iobj])) {
+        solve_each_element_fast(iand_ofs + 1, and_group, dirvec);
+      }
+    }
+  }
+}
+
+/**** 1つの OR-group について交点を調べる ****/
+// iteration
+void solve_one_or_network_fast(int ofs, int *or_group, dvec_t *dirvec) {
+  int head = or_group[ofs];
+  if (head != -1) {
+    int *and_group = and_net[head];
+    solve_each_element_fast(0, and_group, dirvec);
+    solve_one_or_network_fast(ofs+1, or_group, dirvec);
+  }
+}
+
+/**** ORマトリクス全体について交点を調べる。****/
+void trace_or_matrix_fast(int ofs, int **or_network, dvec_t *dirvec) {
+  int *head = or_network[ofs];
+  int range_primitive = head[0];
+  if (range_primitive == -1) { /* 全オブジェクト終了 */
+    return;
+  } else {
+    if (range_primitive == 99) { /* range primitive なし */
+      solve_one_or_network_fast(1, head, dirvec);
+    } else {
+      /* range primitive の衝突しなければ交点はない */
+      float t = solver_fast2(range_primitive, dirvec);
+      if (t != 0) {
+        float tp = solver_dist;
+        if (tp < tmin) {
+          solve_one_or_network_fast(1, head, dirvec);
+        }
+      }
+    }
+    trace_or_matrix_fast(ofs + 1, or_network, dirvec);
+  }
+}
+
+/**** トレース本体 ****/
+bool judge_intersection_fast(dvec_t *dirvec) {
+  float tmin = 1000000000.0;
+  float t;
+  trace_or_matrix_fast(0, or_net, dirvec);
+  t = tmin;
+  if (-0.1 < t) {
+    return t < 100000000.0;
+  } else {
+    return false;
   }
 }
