@@ -16,6 +16,7 @@
 #include <string.h>
 #include "runtime.h"
 
+#define SIZE 300 // FIXME
 typedef struct l {
   int car;
   struct l *cdr;
@@ -97,6 +98,12 @@ vec_t intersection_point;
 float tmin;
 int intersected_object_id;
 int intsec_rectside;
+
+vec_t nvector;
+
+vec_t texture_color;
+vec_t rgb;
+refl_t reflections[SIZE];
 
 /******************************************************************************
    ユーティリティー
@@ -310,17 +317,17 @@ float o_hilight (obj_t *m) {
 }
 
 /* 物体色の R成分 */
-float o_coler_red (obj_t *m) {
+float o_color_red (obj_t *m) {
   return m->color.x;
 }
 
 /* 物体色の G成分 */
-float o_coler_green (obj_t *m) {
+float o_color_green (obj_t *m) {
   return m->color.y;
 }
 
 /* 物体色の B成分 */
-float o_coler_blue (obj_t *m) {
+float o_color_blue (obj_t *m) {
   return m->color.z;
 }
 
@@ -1487,5 +1494,192 @@ bool judge_intersection_fast(dvec_t *dirvec) {
     return t < 100000000.0;
   } else {
     return false;
+  }
+}
+
+
+/******************************************************************************
+   物体と光の交差点の法線ベクトルを求める関数
+*****************************************************************************/
+
+/**** 交点から法線ベクトルを計算する ****/
+/* 衝突したオブジェクトを求めた際の solver の返り値を */
+/* 変数 intsec_rectside 経由で渡してやる必要がある。 */
+/* nvector もグローバル。 */
+void get_nvector_rect(dvec_t *dirvec) {
+  int rectside = intsec_rectside;
+  /* solver の返り値はぶつかった面の方向を示す */
+  vecbzero(&nvector);
+  switch(rectside-1) {
+  case 1:
+    nvector.x = fneg(sgn(dirvec->vec.x));
+    break;
+  case 2:
+    nvector.x = fneg(sgn(dirvec->vec.x));
+    break;
+  case 3:
+    nvector.x = fneg(sgn(dirvec->vec.x));
+    break;
+  default:
+    abort(); /* Error */
+  }
+
+}
+
+
+/* 平面 */
+void get_nvector_plane(obj_t *m) {
+  /* m_invert は常に true のはず */
+  nvector.x = fneg(o_param_a(m));
+  nvector.y = fneg(o_param_b(m));
+  nvector.z = fneg(o_param_c(m));
+}
+
+/* 2次曲面 :  grad x^t A x = 2 A x を正規化する */
+void get_nvector_second(obj_t *m) {
+  float p0 = intersection_point.x - o_param_x(m);
+  float p1 = intersection_point.y - o_param_y(m);
+  float p2 = intersection_point.z - o_param_z(m);
+
+  float d0 = p0 * o_param_a(m);
+  float d1 = p1 * o_param_b(m);
+  float d2 = p2 * o_param_c(m);
+
+  if (o_isrot(m) == 0) {
+    nvector.x = d0;
+    nvector.y = d1;
+    nvector.z = d2;
+  } else {
+    nvector.x = d0 + fhalf(p1 * o_param_r3(m) + p2 * o_param_r2(m));
+    nvector.y = d0 + fhalf(p0 * o_param_r3(m) + p2 * o_param_r1(m));
+    nvector.z = d0 + fhalf(p0 * o_param_r2(m) + p1 * o_param_r1(m));
+  }
+  vecunit_sgn(&nvector, o_isinvert(m));
+}
+
+void get_nvector(obj_t *m, dvec_t *dirvec) {
+  int m_shape = o_form(m);
+  if (m_shape == 1) {
+    get_nvector_rect(dirvec);
+  } else if (m_shape == 2) {
+    get_nvector_plane(m);
+  } else { /* 2次曲面 or 錐体 */
+    get_nvector_second(m);
+  }
+}
+
+
+/******************************************************************************
+   物体表面の色(色付き拡散反射率)を求める
+*****************************************************************************/
+
+
+/**** 交点上のテクスチャの色を計算する ****/
+void utexture(obj_t *m, vec_t *p) {
+  int m_tex = o_texturetype(m);
+  /* 基本はオブジェクトの色 */
+  texture_color.x = o_color_red(m);
+  texture_color.y = o_color_green(m);
+  texture_color.z = o_color_blue(m);
+  if (m_tex == 1) {
+    /* zx方向のチェッカー模様 (G) */
+    float w1 = p->x - o_param_x(m);
+    float d1 = (floor(w1 * 0.05)) * 20.0;
+    float w3 = p->z - o_param_z(m);
+    float d2 = (floor(w3 * 0.05)) * 20.0;
+    int flag1 = (w1-d1 < 10.0);
+    int flag2 = (w3-d2 < 10.0);
+    if (flag1 ^ flag2) {
+      texture_color.y = 0.0;
+    } else {
+      texture_color.y = 255.0;
+    }
+  } else if (m_tex == 2) {
+    /* y軸方向のストライプ (R-G) */
+    float w2 = fsqr(sin(p->y * 0.25));
+    texture_color.x = 255.0 * w2;
+    texture_color.y = 255.0 * (1.0 - w2);
+  } else if (m_tex == 3) {
+    /* ZX面方向の同心円 (G-B) */
+    float w1 = p->x - o_param_x(m);
+    float w3 = p->z - o_param_z(m);
+    float w2 = sqrt (fsqr(w1) + fsqr(w3)) / 10.0;
+    float w4 = (w2 - floor(w2)) * 3.1415927;
+    float cws= fsqr(cos(w4));
+    texture_color.y = cws * 255.0;
+    texture_color.z = (1.0 - cws) * 255.0;
+  } else if (m_tex == 4) {
+    /* 球面上の斑点 (B) */
+    float w1 = (p->x - o_param_x(m)) * (sqrt(o_param_a(m)));
+    float w2 = (p->z - o_param_y(m)) * (sqrt(o_param_b(m)));
+    float w3 = (p->z - o_param_z(m)) * (sqrt(o_param_c(m)));
+    float w4 = fsqr(w1) + fsqr(w3);
+    float w5 = fabs(w3 / w1);
+    float w6 = fabs(w2 / w4);
+    float w7, w8, w9, w10, w11, w12;
+    if (fabs(w1) < 1.0e-4) {
+      w7 = 15.0; /* atan +infty = pi/2 */
+    } else {
+      w7 = (atan(w5) * 30.0) / 3.1415927;
+    }
+    if (fabs(w4) < 1.0e-4) {
+      w8 = 15.0; /* atan +infty = pi/2 */
+    } else {
+      w8 = (atan(w6) * 30.0) / 3.1415927;
+    }
+    w9  = w7 - floor(w7);
+    w10 = w8 - floor(w8);
+    w11 = 0.15 - fsqr(0.5 - w9) - fsqr(0.5 - w10);
+    w12 = (fisneg(w11)) ? 0.0 : w11;
+    texture_color.z = (255.0 * w12) / 0.3;
+  }
+}
+
+/******************************************************************************
+   衝突点に当たる光源の直接光と反射光を計算する関数群
+*****************************************************************************/
+
+/* 当たった光による拡散光と不完全鏡面反射光による寄与をRGB値に加算 */
+void add_light(float bright, float hilight, float hilight_scale) {
+
+  /* 拡散光 */
+  if (fispos(bright)) {
+    vecaccum(&rgb, bright, &texture_color);
+  }
+
+  /* 不完全鏡面反射 cos ^4 モデル */
+  if (fispos(hilight)) {
+    float ihl = fsqr(fsqr(hilight)) * hilight_scale;
+    rgb.x += ihl;
+    rgb.y += ihl;
+    rgb.z += ihl;
+  }
+
+}
+
+
+/* 各物体による光源の反射光を計算する関数(直方体と平面のみ) */
+// iteration
+void trace_reflections(int index, float diffuse, float hilight_scale, dvec_t *dirvec) {
+  if (index >= 0) {
+    refl_t *rinfo = &reflections[index]; /* 鏡平面の反射情報 */
+    dvec_t *dvec  = r_dvec(rinfo);       /* 反射光の方向ベクトル(光と逆向き */
+
+    /*反射光を逆にたどり、実際にその鏡面に当たれば、反射光が届く可能性有り */
+    if (judge_intersection_fast(dvec)) {
+      int surface_id = intersected_object_id * 4 + intsec_rectside;
+      if (surface_id == r_surface_id(rinfo)) {
+        /* 鏡面との衝突点が光源の影になっていなければ反射光は届く */
+        if (!shadow_check_one_or_matrix(0, or_net)) {
+          /* 届いた反射光による RGB成分への寄与を加算 */
+          float p = veciprod(&nvector, d_vec(dvec));
+          float scale = r_bright(rinfo);
+          float bright = scale  * diffuse * p;
+          float hilight = scale * veciprod(d_vec(dirvec), d_vec(dvec));
+          add_light(bright, hilight, hilight_scale);
+        }
+      }
+    }
+    trace_reflections(index - 1, diffuse, hilight_scale, dirvec);
   }
 }
