@@ -17,10 +17,6 @@
 #include "runtime.h"
 
 #define SIZE 300 // FIXME
-typedef struct l {
-  int car;
-  struct l *cdr;
-} list_t;
 
 typedef struct {
   float x, y, z;
@@ -40,15 +36,30 @@ typedef struct {
 } obj_t;
 
 typedef struct {
+  int  size;
+  int* head;
+} iarr_t;
+
+typedef struct {
+  int    size;
+  vec_t* head;
+} varr_t;
+
+typedef struct {
   int    rgb;
-  list_t isect_ps;
-  list_t sids;
-  bool   cdif;
-  float  engy;
-  float  r20p;
+  varr_t  isect_ps;
+  iarr_t  sids;
+  iarr_t  cdif;
+  varr_t  engy;
+  varr_t  r20p;
   int    gid;
-  vec_t  nvectors;
+  varr_t  nvectors;
 } pixel_t;
+
+typedef struct {
+  int size;
+  pixel_t* head;
+} parr_t;
 
 typedef struct {
   vec_t   vec;
@@ -72,6 +83,66 @@ void copy_vec4(vec4_t *dst, vec4_t *src) {
   memcpy(dst, src, sizeof(vec4_t));
 }
 
+void copy_pixel(pixel_t *dst, pixel_t *src) {
+  memcpy(dst, src, sizeof(pixel_t));
+}
+
+// iarr_t
+void iarr_set_nth(iarr_t* arr, int idx, int value) {
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(int) * (idx+1));
+    arr->size = idx + 1;
+  }
+  arr->head[idx] = value;
+}
+int iarr_get_nth(iarr_t* arr, int idx) {
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(int) * (idx+1));
+    arr->size = idx + 1;
+    arr->head[idx] = -1;
+  }
+  return arr->head[idx];
+}
+
+
+// varr_t
+void varr_set_nth(varr_t* arr, int idx, vec_t *value) {
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(vec_t) * (idx+1));
+    arr->size = idx + 1;
+  }
+  copy_vec(&arr->head[idx], value);
+}
+
+vec_t* varr_get_nth(varr_t* arr, int idx) {
+  void vecbzero(vec_t*);
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(vec_t) * (idx+1));
+    arr->size = idx + 1;
+    vecbzero(&arr->head[idx]);
+  }
+  return &arr->head[idx];
+}
+
+// parr_t
+void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(vec_t) * (idx+1));
+    arr->size = idx + 1;
+  }
+  copy_pixel(&arr->head[idx], value);
+}
+
+pixel_t* parr_get_nth(parr_t* arr, int idx) {
+  if (arr->size <= idx) {
+    arr->head = realloc(arr->head, sizeof(vec_t) * (idx+1));
+    arr->size = idx + 1;
+
+  }
+  return &arr->head[idx];
+}
+
+
 
 /*
   global variables
@@ -80,7 +151,9 @@ void copy_vec4(vec4_t *dst, vec4_t *src) {
 vec_t screen;
 vec_t screenx_dir, screeny_dir, screenz_dir;
 vec_t viewpoint;
-vec_t light, beam;
+vec_t light;
+float beam;
+
 
 obj_t *objects;
 int n_objects;
@@ -99,11 +172,18 @@ float tmin;
 int intersected_object_id;
 int intsec_rectside;
 
-vec_t nvector;
+vec_t nvector; // TODO
 
 vec_t texture_color;
 vec_t rgb;
 refl_t reflections[SIZE];
+
+int n_reflections;
+vec_t diffuse_ray;
+
+dvec_t dirvecs[5]; // TODO
+
+int image_size[2];
 
 /******************************************************************************
    ユーティリティー
@@ -368,29 +448,29 @@ int p_rgb (pixel_t *pixel) {
 }
 
 /* 飛ばした光が物体と衝突した点の配列 */
-list_t *p_intersection_points (pixel_t *pixel) {
+varr_t *p_intersection_points (pixel_t *pixel) {
   return &pixel->isect_ps;
 }
 
 /* 飛ばした光が衝突した物体面番号の配列 */
 /* 物体面番号は オブジェクト番号 * 4 + (solverの返り値) */
-list_t *p_surface_ids (pixel_t *pixel) {
+iarr_t *p_surface_ids (pixel_t *pixel) {
   return &pixel->sids;
 }
 
 /* 間接受光を計算するか否かのフラグ */
-int p_calc_diffuse (pixel_t *pixel) {
-  return pixel->cdif;
+iarr_t *p_calc_diffuse (pixel_t *pixel) {
+  return &pixel->cdif;
 }
 
 /* 衝突点の間接受光エネルギーがピクセル輝度に与える寄与の大きさ */
-float p_energy (pixel_t*pixel) {
-  return pixel->engy;
+varr_t *p_energy (pixel_t*pixel) {
+  return &pixel->engy;
 }
 
 /* 衝突点の間接受光エネルギーを光線本数を1/5に間引きして計算した値 */
-float p_received_ray_20percent (pixel_t *pixel) {
-  return pixel->r20p;
+varr_t *p_received_ray_20percent (pixel_t *pixel) {
+  return &pixel->r20p;
 }
 
 /* このピクセルのグループ ID */
@@ -413,7 +493,7 @@ void p_set_group_id (pixel_t *pixel, int id) {
 }
 
 /* 各衝突点における法線ベクトル */
-vec_t* p_nvectors (pixel_t *pixel) {
+varr_t* p_nvectors (pixel_t *pixel) {
   return &(pixel->nvectors);
 }
 
@@ -501,7 +581,7 @@ void read_light(void) {
   light.y = - sl1;
   light.x = cl1 * sl2;
   light.z = cl1 * cl2;
-  beam.x = read_float();
+  beam = read_float();
 }
 
 void rotate_quadratic_matrix(vec_t *abc, vec_t *rot) {
@@ -821,7 +901,7 @@ int solver_second(obj_t *m, dvec_t *dirvec, float b0, float b1, float b2) {
   } else {
 
     /* b' = b/2 = dirvec^t A base   */
-    float bb = bilinear(m, dirvec->x, dirvec->y, dirvec->z, b0, b1, b2);
+    float bb = bilinear(m, dirvec->vec.x, dirvec->vec.y, dirvec->vec.z, b0, b1, b2);
     /* c = base^t A base  - (0か1)  */
     float cc0 = quadratic(m, b0, b1, b2);
     float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
@@ -848,13 +928,15 @@ int solver(int index, dvec_t *dirvec, vec_t *org) {
   float b2 =  org->z - o_param_z(m);
   int m_shape = o_form(m);
   /* 物体の種類に応じた補助関数を呼ぶ */
+  int ret;
   if (m_shape == 1) {
-    solver_rect(m, dirvec, b0, b1, b2);    /* 直方体 */
+    ret = solver_rect(m, dirvec, b0, b1, b2);    /* 直方体 */
   } else if (m_shape == 2) {
-    solver_surface(m, dirvec, b0, b1, b2); /* 平面 */
+    ret = solver_surface(m, dirvec, b0, b1, b2); /* 平面 */
   } else {
-    solver_second(m, dirvec, b0, b1, b2);  /* 2次曲面/円錐 */
+    ret = solver_second(m, dirvec, b0, b1, b2);  /* 2次曲面/円錐 */
   }
+  return ret;
 }
 
 /******************************************************************************
@@ -971,13 +1053,15 @@ int solver_fast(int index, dvec_t *dirvec, vec_t *org) {
   float **dconsts = d_const(dirvec);
   float  *dconst  = dconsts[index];
   int m_shape = o_form(m);
+  int ret;
   if (m_shape == 1) {
-    return solver_rect_fast(m, d_vec(dirvec), dconst, b0, b1, b2);
+    ret = solver_rect_fast(m, d_vec(dirvec), dconst, b0, b1, b2);
   } else if (m_shape == 2) {
-    return solver_surface_fast(m, dconst, b0, b1, b2);
+    ret = solver_surface_fast(m, dconst, b0, b1, b2);
   } else {
-    return solver_second_fast(m, dconst, b0, b1, b2);
+    ret = solver_second_fast(m, dconst, b0, b1, b2);
   }
+  return ret;
 }
 
 
@@ -1672,14 +1756,280 @@ void trace_reflections(int index, float diffuse, float hilight_scale, dvec_t *di
         /* 鏡面との衝突点が光源の影になっていなければ反射光は届く */
         if (!shadow_check_one_or_matrix(0, or_net)) {
           /* 届いた反射光による RGB成分への寄与を加算 */
-          float p = veciprod(&nvector, d_vec(dvec));
+          float p = veciprod_d(dvec, &nvector);
           float scale = r_bright(rinfo);
           float bright = scale  * diffuse * p;
-          float hilight = scale * veciprod(d_vec(dirvec), d_vec(dvec));
+          float hilight = scale * veciprod_d(dirvec, d_vec(dvec));
           add_light(bright, hilight, hilight_scale);
         }
       }
     }
     trace_reflections(index - 1, diffuse, hilight_scale, dirvec);
+  }
+}
+
+/******************************************************************************
+   直接光を追跡する
+*****************************************************************************/
+// iteration
+void trace_ray(int nref, float energy, dvec_t *dirvec, pixel_t *pixel, float dist) {
+  if (nref <= 4) {
+    iarr_t *surface_ids = p_surface_ids(pixel);
+    if (judge_intersection(dirvec)) {
+      /* オブジェクトにぶつかった場合 */
+      int obj_id = intersected_object_id;
+      obj_t *obj = &objects[obj_id];
+      int m_surface = o_reflectiontype(obj);
+      float diffuse = o_diffuse(obj) * energy;
+      varr_t *intersection_points;
+      iarr_t *calc_diffuse;
+      float w, hilight_scale;
+      get_nvector(obj, dirvec); /* 法線ベクトルを get */
+      veccpy(&startp, &intersection_point);  /* 交差点を新たな光の発射点とする */
+      utexture(obj, &intersection_point); /*テクスチャを計算 */
+
+      /* pixel tupleに情報を格納する */
+      iarr_set_nth(surface_ids, nref, obj_id * 4 + intsec_rectside);
+      intersection_points = p_intersection_points(pixel);
+      veccpy(varr_get_nth(intersection_points, nref),
+             &intersection_point);
+      /* 拡散反射率が0.5以上の場合のみ間接光のサンプリングを行う */
+
+      calc_diffuse = p_calc_diffuse(pixel);
+      if (o_diffuse(obj) < 0.5) {
+        iarr_set_nth(calc_diffuse, nref, false);
+      } else {
+        varr_t *energya  = p_energy(pixel);
+        varr_t *nvectors = p_nvectors(pixel);
+        iarr_set_nth(calc_diffuse, nref, true);
+        varr_set_nth(energya, nref, &texture_color);
+        vecscale(varr_get_nth(energya, nref),
+                 (1.0 / 256.0) * diffuse);
+        varr_set_nth(nvectors, nref, &nvector);
+      }
+
+      w = (-2.0) * veciprod_d(dirvec, &nvector);
+      vecaccum(d_vec(dirvec), w, &nvector);
+
+      hilight_scale = energy * o_hilight(obj);
+      /* 光源光が直接届く場合、RGB成分にこれを加味する */
+      if (!(shadow_check_one_or_matrix(0, or_net))) {
+        float bright = fneg(veciprod(&nvector, &light)) * diffuse;
+        float hilight = fneg(veciprod_d(dirvec, &light));
+        add_light(bright, hilight, hilight_scale);
+      }
+
+      /* 光源光の反射光が無いか探す */
+      setup_startp(&intersection_point);
+      trace_reflections(n_reflections-1, diffuse, hilight_scale, dirvec);
+
+      /* 重みが 0.1より多く残っていたら、鏡面反射元を追跡する */
+      if (0.1 < energy) {
+        if (nref < 4) {
+          iarr_set_nth(surface_ids, nref+1, -1);
+        }
+      }
+
+      if (m_surface == 2) {
+        float energy2 = energy * (1.0 - o_diffuse(obj));
+        trace_ray(nref+1, energy2, dirvec, pixel, dist + tmin);
+      }
+    } else {
+      /* どの物体にも当たらなかった場合。光源からの光を加味 */
+      iarr_set_nth(surface_ids, nref+1, -1);
+      if (nref != 0) {
+        float hl = fneg(veciprod_d(dirvec, &light));
+        /* 90°を超える場合は0 (光なし) */
+        if (fispos(hl)) {
+          /* ハイライト強度は角度の cos^3 に比例 */
+          float ihl = fsqr(hl) * hl * energy * beam;
+          rgb.x += ihl;
+          rgb.y += ihl;
+          rgb.z += ihl;
+        }
+
+      }
+
+    }
+  }
+}
+
+
+/******************************************************************************
+   間接光を追跡する
+*****************************************************************************/
+
+/* ある点が特定の方向から受ける間接光の強さを計算する */
+/* 間接光の方向ベクトル dirvecに関しては定数テーブルが作られており、衝突判定
+   が高速に行われる。物体に当たったら、その後の反射は追跡しない */
+void trace_diffuse_ray(dvec_t *dirvec, float energy) {
+  /* どれかの物体に当たるか調べる */
+  if (judge_intersection_fast(dirvec)) {
+    obj_t *obj = &objects[intersected_object_id];
+    get_nvector(obj, dirvec);
+    utexture(obj, &intersection_point);
+
+    /* その物体が放射する光の強さを求める。直接光源光のみを計算 */
+    if (!shadow_check_one_or_matrix(0, or_net)) {
+      float br = fneg(veciprod(&nvector, &light));
+      float bright = (fispos(br) ? br : 0.0);
+      vecaccum(&diffuse_ray,
+               energy * bright * o_diffuse(obj),
+               &texture_color);
+    }
+  }
+
+}
+
+/* あらかじめ決められた方向ベクトルの配列に対し、各ベクトルの方角から来る
+   間接光の強さをサンプリングして加算する */
+// iteration
+void iter_trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org, int index) {
+  if (index >= 0) {
+    float p = veciprod(d_vec(&dirvec_group[index]), nvector);
+
+    /* 配列の 2n 番目と 2n+1 番目には互いに逆向の方向ベクトルが入っている
+       法線ベクトルと同じ向きの物を選んで使う */
+    if (fisneg(p)) {
+      trace_diffuse_ray(&dirvec_group[index+1], p / -150.0);
+    } else {
+      trace_diffuse_ray(&dirvec_group[index],   p / -150.0);
+    }
+    iter_trace_diffuse_rays(dirvec_group, nvector, org, (index - 2));
+  }
+}
+
+/* 与えられた方向ベクトルの集合に対し、その方向の間接光をサンプリングする */
+void trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org) {
+  setup_startp(org);
+
+  /* 配列の 2n 番目と 2n+1 番目には互いに逆向の方向ベクトルが入っていて、
+     法線ベクトルと同じ向きの物のみサンプリングに使われる */
+  /* 全部で 120 / 2 = 60本のベクトルを追跡 */
+  iter_trace_diffuse_rays(dirvec_group, nvector, org, 118);
+}
+
+/* 半球方向の全部で300本のベクトルのうち、まだ追跡していない残りの240本の
+   ベクトルについて間接光追跡する。60本のベクトル追跡を4セット行う */
+void trace_diffuse_ray_80percent(int group_id, vec_t *nvector, vec_t *org) {
+
+  int i;
+
+  for (i = 0; i <= 4; ++i) {
+    if (group_id != i) {
+      trace_diffuse_rays(&dirvecs[i], nvector, org);
+    }
+  }
+
+}
+
+/* 上下左右4点の間接光追跡結果を使わず、300本全部のベクトルを追跡して間接光を
+   計算する。20%(60本)は追跡済なので、残り80%(240本)を追跡する */
+void calc_diffuse_using_1point(pixel_t *pixel, int nref) {
+  varr_t *ray20p = p_received_ray_20percent(pixel);
+  varr_t  *nvectors = p_nvectors(pixel);
+  varr_t  *intersection_points = p_intersection_points(pixel);
+  varr_t *energya = p_energy(pixel);
+  veccpy(&diffuse_ray, varr_get_nth(ray20p, nref));
+  trace_diffuse_ray_80percent(p_group_id(pixel),
+                              varr_get_nth(nvectors, nref),
+                              varr_get_nth(intersection_points, nref));
+  vecaccumv(&rgb, varr_get_nth(energya, nref), &diffuse_ray);
+}
+
+/* 自分と上下左右4点の追跡結果を加算して間接光を求める。本来は 300 本の光を
+   追跡する必要があるが、5点加算するので1点あたり60本(20%)追跡するだけで済む */
+void calc_diffuse_using_5points(int x, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
+  varr_t *r_up     = p_received_ray_20percent(parr_get_nth(prev, x));
+  varr_t *r_left   = p_received_ray_20percent(parr_get_nth(cur, x-1));
+  varr_t *r_center = p_received_ray_20percent(parr_get_nth(cur, x));
+  varr_t *r_right  = p_received_ray_20percent(parr_get_nth(cur, x+1));
+  varr_t *r_down   = p_received_ray_20percent(parr_get_nth(next, x));
+
+  varr_t *energya  = p_energy(parr_get_nth(cur, x));
+
+  veccpy(&diffuse_ray, varr_get_nth(r_up,     nref));
+
+  vecadd(&diffuse_ray, varr_get_nth(r_left,   nref));
+  vecadd(&diffuse_ray, varr_get_nth(r_center, nref));
+  vecadd(&diffuse_ray, varr_get_nth(r_right,  nref));
+  vecadd(&diffuse_ray, varr_get_nth(r_down,   nref));
+
+  vecaccumv(&rgb, varr_get_nth(energya, nref), &diffuse_ray);
+
+}
+
+/* 上下左右4点を使わずに直接光の各衝突点における間接受光を計算する */
+// iteration
+void do_without_neighbors(pixel_t *pixel, int nref) {
+  if (nref <= 4) {
+    /* 衝突面番号が有効(非負)かチェック */
+    iarr_t *surface_ids = p_surface_ids(pixel);
+    if (iarr_get_nth(surface_ids, nref) >= 0) {
+      iarr_t *calc_diffuse = p_calc_diffuse(pixel);
+      if (iarr_get_nth(calc_diffuse, nref)) {
+        calc_diffuse_using_1point(pixel, nref);
+      }
+      do_without_neighbors(pixel, nref+1);
+    }
+  }
+}
+
+/* 画像上で上下左右に点があるか(要するに、画像の端で無い事)を確認 */
+bool neighbors_exist(int x, int y, pixel_t *next) {
+  if (0 < y && y+1 < image_size[1]) {
+    if (0 < x && x+1 < image_size[0]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int get_surface_id(pixel_t *pixel, int index) {
+  iarr_t *surface_ids = p_surface_ids(pixel);
+  return iarr_get_nth(surface_ids, index);
+}
+
+/* 上下左右4点の直接光追跡の結果、自分と同じ面に衝突しているかをチェック
+   もし同じ面に衝突していれば、これら4点の結果を使うことで計算を省略出来る */
+bool neighbors_are_available(int x, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
+  int sid_center = get_surface_id(parr_get_nth(cur, x), nref);
+  if (get_surface_id(parr_get_nth(prev, x),  nref) == sid_center) {
+    if (get_surface_id(parr_get_nth(next, x),  nref) == sid_center) {
+      if (get_surface_id(parr_get_nth(cur, x-1), nref) == sid_center) {
+        if (get_surface_id(parr_get_nth(cur, x+1), nref) == sid_center) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/* 直接光の各衝突点における間接受光の強さを、上下左右4点の結果を使用して計算
+   する。もし上下左右4点の計算結果を使えない場合は、その時点で
+   do_without_neighborsに切り替える */
+// iteration
+void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
+  pixel_t *pixel = parr_get_nth(cur, x);
+  if (nref <= 4) {
+    /* 衝突面番号が有効(非負)か */
+    if (get_surface_id(pixel, nref) >= 0) {
+      /* 周囲4点を補完に使えるか */
+      if (neighbors_are_available(x, prev, cur, next, nref)) {
+
+        /* 間接受光を計算するフラグが立っていれば実際に計算する */
+        iarr_t *calc_diffuse = p_calc_diffuse(pixel);
+        if (iarr_get_nth(calc_diffuse, nref)) {
+          calc_diffuse_using_5points(x, prev, cur, next, nref);
+        }
+        /* 次の反射衝突点へ */
+        try_exploit_neighbors(x, y, prev, cur, next, nref + 1);
+      } else {
+        /* 周囲4点を補完に使えないので、これらを使わない方法に切り替える */
+        do_without_neighbors(parr_get_nth(cur, x), nref);
+      }
+    }
+
   }
 }
