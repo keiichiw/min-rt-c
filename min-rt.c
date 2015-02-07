@@ -46,7 +46,7 @@ typedef struct {
 } varr_t;
 
 typedef struct {
-  int    rgb;
+  vec_t   rgb;
   varr_t  isect_ps;
   iarr_t  sids;
   iarr_t  cdif;
@@ -124,6 +124,20 @@ vec_t* varr_get_nth(varr_t* arr, int idx) {
   return &arr->head[idx];
 }
 
+void varr_init(varr_t *arr, int sz, float v) {
+  arr->size = sz;
+  arr->head = (vec_t*)malloc(sizeof(vec_t) * sz);
+  memset(arr->head, v, sizeof(vec_t) * sz);
+}
+void iarr_init(iarr_t *arr, int sz, int v) {
+  int i;
+  arr->size = sz;
+  arr->head = (int*)malloc(sizeof(int) * sz);
+  for (i = 0; i < sz; ++i) {
+    arr->head[i] = v;
+  }
+}
+
 // parr_t
 void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
   if (arr->size <= idx) {
@@ -184,6 +198,10 @@ vec_t diffuse_ray;
 dvec_t dirvecs[5]; // TODO
 
 int image_size[2];
+int image_center[2];
+float scan_pitch;
+dvec_t ptrace_dirvec;
+
 
 /******************************************************************************
    ユーティリティー
@@ -443,7 +461,7 @@ vec4_t *o_param_ctbl (obj_t *m) {
 *****************************************************************************/
 
 /* 直接光追跡で得られたピクセルのRGB値 */
-int p_rgb (pixel_t *pixel) {
+vec_t *p_rgb (pixel_t *pixel) {
   return pixel->rgb;
 }
 
@@ -2032,4 +2050,160 @@ void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next
     }
 
   }
+}
+
+
+/******************************************************************************
+   PPMファイルの書き込み関数
+*****************************************************************************/
+void write_ppm_header() {
+  print_char(80); /* 'P' */
+  print_char(48 + 3); /* +6 if binary */ /* 48 = '0' */
+  print_char(10);
+  print_int(image_size[0]);
+  print_char(32);
+  print_int(image_size[1]);
+  print_char(32);
+  print_int(255);
+  print_char(10);
+}
+
+void write_rgb_element(int x) {
+  int ix = int_of_float(x);
+  int elem = ix;
+  if (ix > 255) {
+    elem = 255;
+  } else if (ix < 0) {
+    elem = 0;
+  }
+  print_int(elem);
+}
+
+
+void write_rgb () {
+  write_rgb_element(rgb.x); /* Red */
+  print_char(32);
+  write_rgb_element(rgb.y); /* Green */
+  print_char(32);
+  write_rgb_element(rgb.z); /* Blue */
+  print_char(10);
+}
+
+/******************************************************************************
+   あるラインの計算に必要な情報を集めるため次のラインの追跡を行っておく関数群
+*****************************************************************************/
+
+/* 間接光のサンプリングでは上下左右4点の結果を使うので、次のラインの計算を
+   行わないと最終的なピクセルの値を計算できない */
+
+/* 間接光を 60本(20%)だけ計算しておく関数 */
+// iteration
+void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
+  if (nref <= 4) {
+    /* 面番号が有効か */
+    int sid = get_surface_id(pixel, nref);
+    if (sid >= 0) {
+      /* 間接光を計算するフラグが立っているか */
+      iarr_t *calc_diffuse = p_calc_diffuse(pixel);
+      if (iarr_get_nth(calc_diffuse, nref)) {
+        int group_id = p_group_id(pixel);
+        varr_t *nvectors;
+        varr_t *intersection_points;
+        varr_t *ray20p;
+        vecbzero(&diffuse_ray);
+
+        /* 5つの方向ベクトル集合(各60本)から自分のグループIDに対応する物を
+           一つ選んで追跡 */
+        nvectors = p_nvectors(pixel);
+        intersection_points = p_intersection_points(pixel);
+        trace_diffuse_rays(&dirvecs[group_id],
+                           varr_get_nth(nvectors, nref),
+                           varr_get_nth(intersection_points, nref));
+        ray20p = p_received_ray_20percent(pixel);
+        veccpy(varr_get_nth(ray20p, nref),
+               &diffuse_ray);
+      }
+      pretrace_diffuse_rays(pixel, nref+1);
+    }
+
+  }
+}
+
+
+/* 各ピクセルに対して直接光追跡と間接受光の20%分の計算を行う */
+// iteration
+void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
+  if (x >= 0) {
+    float xdisp = scan_pitch * float_of_int(x - image_center[0]);
+    ptrace_dirvec.vec.x = xdisp * screenx_dir.x + lc0;
+    ptrace_dirvec.vec.y = xdisp * screenx_dir.y + lc1;
+    ptrace_dirvec.vec.z = xdisp * screenx_dir.z + lc2;
+    vecunit_sgn(&ptrace_dirvec.vec, false);
+    vecbzero(&rgb);
+    veccpy(&startp, &viewpoint);
+
+    /* 直接光追跡 */
+    trace_ray(0, 1.0, &ptrace_dirvec, parr_get_nth(line, x), 0.0);
+    veccpy(p_rgb(parr_get_nth(line, x)), &rgb);
+    p_set_group_id(parr_get_nth(line, x), group_id);
+
+    /* 間接光の20%を追跡 */
+    pretrace_diffuse_rays(parr_get_nth(line, x), 0);
+
+    pretrace_pixels(line, x-1, add_mod5(group_id, 1), lc0, lc1, lc2);
+
+  }
+}
+
+
+/* あるラインの各ピクセルに対し直接光追跡と間接受光20%分の計算をする */
+void pretrace_line(parr_t *line, int y, int group_id) {
+  float ydisp = scan_pitch * float_of_int(y - image_center[1]);
+  /* ラインの中心に向かうベクトルを計算 */
+  float lc0 = ydisp * screeny_dir.x + screenz_dir.x;
+  float lc1 = ydisp * screeny_dir.y + screenz_dir.y;
+  float lc2 = ydisp * screeny_dir.z + screenz_dir.z;
+  pretrace_pixels(line, image_size[0] - 1, group_id, lc0, lc1, lc2);
+}
+
+/******************************************************************************
+   ピクセルの情報を格納するデータ構造の割り当て関数群
+ *****************************************************************************/
+/* ピクセルを表すtupleを割り当て */
+pixel_t *create_pixel() {
+  pixel_t *pixel = malloc(sizeof(pixel_t));
+  vecbzero(&pixel->rgb);
+  varr_init(&pixel->isect_ps, 5, 0.0);
+  iarr_init(&pixel->sids, 5, 0);
+  iarr_init(&pixel->cdif, 5, false);
+  varr_init(&pixel->engy, 5, 0.0);
+  varr_init(&pixel->r20p, 5, 0.0);
+  pixel->gid = 0;
+  varr_init(&pixel->nvectors, 5, 0.0);
+  return pixel;
+}
+
+
+/* 横方向1ライン中の各ピクセル要素を割り当てる */
+// iteration
+parr_t *init_line_elements(parr_t *line, int n) {
+  if (n >= 0) {
+    pixel_t *pixel = create_pixel();
+    parr_set_nth(line, n, pixel);
+    return init_line_elements(line, n-1);
+  } else {
+    return line;
+  }
+}
+
+/* 横方向1ライン分のピクセル配列を作る */
+parr_t *create_pixelline() {
+  int i;
+  int x = image_size[0];
+  parr_t *line = (parr_t *)malloc(sizeof(parr_t));
+
+  for (i = 0; i < x; ++i) {
+    parr_set_nth(line, i, create_pixel());
+  }
+  return init_line_elements(line, image_size[0]-2);
 }

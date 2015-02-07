@@ -22,4 +22,7 @@ float atan(float);
 float read_float();
 int   read_int();
 
+void print_char(char);
+void print_int(int);
+
 #endif
