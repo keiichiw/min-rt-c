@@ -158,50 +158,80 @@ pixel_t* parr_get_nth(parr_t* arr, int idx) {
 
 
 
-/*
-  global variables
-*/
+/**************** グローバル変数の宣言 ****************/
 
+/* オブジェクトの個数 */
+int n_objects = 0;
+
+/* オブジェクトのデータを入れるベクトル（最大60個）*/
+obj_t objects[60];
+
+/* Screen の中心座標 */
 vec_t screen;
-vec_t screenx_dir, screeny_dir, screenz_dir;
+/* 視点の座標 */
 vec_t viewpoint;
+/* 光源方向ベクトル (単位ベクトル) */
 vec_t light;
-float beam;
+/* 鏡面ハイライト強度 (標準=255) */
+float beam = 255.0;
+/* AND ネットワークを保持 */
+int and_net[50] = {-1};
+/* OR ネットワークを保持 */
+int or_net;
 
-
-obj_t *objects;
-int n_objects;
-
-int *and_net[50];
-int **or_net; // or_net is an array of length 1 in min-rt.ml
-
-float solver_dist; // an array of length 1 in min-rt.ml
-
-vec_t  startp;
-vec_t  startp_fast;
-dvec_t light_dirvec;
+/* 以下、交差判定ルーチンの返り値格納用 */
+/* solver の交点 の t の値 */
+float solver_dist = 0.0;
+/* 交点の直方体表面での方向 */
+int intsec_rectside = 0;
+/* 発見した交点の最小の t */
+float tmin = 1000000000.0;
+/* 交点の座標 */
 vec_t intersection_point;
-
-float tmin;
-int intersected_object_id;
-int intsec_rectside;
-
-vec_t nvector; // TODO
-
+/* 衝突したオブジェクト番号 */
+int intersected_object_id = 0;
+/* 法線ベクトル */
+vec_t nvector;
+/* 交点の色 */
 vec_t texture_color;
+
+/* 計算中の間接受光強度を保持 */
+vec_t diffuse_ray;
+/* スクリーン上の点の明るさ */
 vec_t rgb;
-refl_t reflections[SIZE];
+
+/* 画像サイズ */
+int image_size[2];
+/* 画像の中心 = 画像サイズの半分 */
+int image_center[2];
+/* 3次元上のピクセル間隔 */
+float scan_pitch;
+
+/* judge_intersectionに与える光線始点 */
+vec_t startp;
+/* judge_intersection_fastに与える光線始点 */
+vec_t startp_fast;
+
+/* 画面上のx,y,z軸の3次元空間上の方向 */
+vec_t screenx_dir;
+vec_t screeny_dir;
+vec_t screenz_dir;
+
+/* 直接光追跡で使う光方向ベクトル */
+vec_t ptrace_dirvec;
+
+/* 間接光サンプリングに使う方向ベクトル */
+dvec_t dirvecs[5];   // TODO initialize
+
+/* 光源光の前処理済み方向ベクトル */
+dvec_t light_dirvec; // TODO initialize
+
+/* 鏡平面の反射情報 */
+refl_t reflections[180]; // TODO
+
+/* reflectionsの有効な要素数 */
 
 int n_reflections;
-vec_t diffuse_ray;
-
-dvec_t dirvecs[5]; // TODO
-
-int image_size[2];
-int image_center[2];
-float scan_pitch;
-dvec_t ptrace_dirvec;
-
 
 /******************************************************************************
    ユーティリティー
