@@ -6,18 +6,27 @@ int fiszero(float);
 float fhalf(float);
 float fsqr (float);
 
+float mysqrt(float);
+float myfloor(float);
+float mycos(float);
+float mysin(float);
+float mytan(float);
+float myatan(float);
 #define fabs(x) ((x)<0.0?-(x):(x))
 #define fneg(x) (-(x))
 
-float sqrt  (float);
-float floor (float);
+#define sqrt(x)  (mysqrt(x))
+#define floor(x) (myfloor(x))
+
 
 int   int_of_float (float);
 float float_of_int (int);
 
-float cos (float);
-float sin (float);
-float atan(float);
+#define cos(x)   (mycos(x))
+#define sin(x)   (mysin(x))
+#define tan(x)   (mytan(x))
+#define atan(x)  (myatan(x))
+
 
 float read_float();
 int   read_int();

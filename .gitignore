@@ -2,7 +2,14 @@
 *.s
 *.o
 *.out
+*.ppm
+*.annot
+min-rt
 origin/*.cmi
 origin/*.cmx
 origin/min-rt
 origin/sld/
+/GPATH
+/GRTAGS
+/GSYMS
+/GTAGS
