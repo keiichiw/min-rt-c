@@ -65,9 +65,9 @@ int read_int() {
 }
 
 void print_char(char c) {
-  printf("%c\n", c);
+  printf("%c", c);
 }
 
 void print_int(int i) {
-  printf("%d\n", i);
+  printf("%d", i);
 }

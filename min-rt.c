@@ -11,6 +11,7 @@
 /*                                                              */
 /****************************************************************/
 
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,13 +36,13 @@ typedef struct {
 } obj_t;
 
 typedef struct {
-  int  size;
-  int* head;
+  int   size;
+  int  *head;
 } iarr_t;
 
 typedef struct {
-  int    size;
-  vec_t* head;
+  int     size;
+  vec_t *head;
 } varr_t;
 
 typedef struct {
@@ -51,13 +52,13 @@ typedef struct {
   iarr_t  cdif;
   varr_t  engy;
   varr_t  r20p;
-  int    gid;
+  int      gid;
   varr_t  nvectors;
 } pixel_t;
 
 typedef struct {
   int size;
-  pixel_t* head;
+  pixel_t *head;
 } parr_t;
 
 typedef struct {
@@ -89,16 +90,13 @@ void copy_pixel(pixel_t *dst, pixel_t *src) {
 // iarr_t
 void iarr_set_nth(iarr_t* arr, int idx, int value) {
   if (arr->size <= idx) {
-    arr->head = realloc(arr->head, sizeof(int) * (idx+1));
-    arr->size = idx + 1;
+    assert(false);
   }
   arr->head[idx] = value;
 }
 int iarr_get_nth(iarr_t* arr, int idx) {
   if (arr->size <= idx) {
-    arr->head = realloc(arr->head, sizeof(int) * (idx+1));
-    arr->size = idx + 1;
-    arr->head[idx] = -1;
+    assert(false);
   }
   return arr->head[idx];
 }
@@ -108,8 +106,6 @@ int iarr_get_nth(iarr_t* arr, int idx) {
 void varr_set_nth(varr_t* arr, int idx, vec_t *value) {
   if (arr->size <= idx) {
     assert(false);
-    arr->head = malloc(sizeof(vec_t) * (idx+1));
-    arr->size = idx + 1;
   }
   copy_vec(&arr->head[idx], value);
 }
@@ -118,33 +114,14 @@ vec_t* varr_get_nth(varr_t* arr, int idx) {
   void vecbzero(vec_t*);
   if (arr->size <= idx) {
     assert(false);
-    arr->head = malloc(sizeof(vec_t) * (idx+1));
-    arr->size = idx + 1;
-    vecbzero(&arr->head[idx]);
   }
   return &arr->head[idx];
-}
-
-void varr_init(varr_t *arr, int sz, float v) {
-  arr->size = sz;
-  arr->head = (vec_t*)malloc(sizeof(vec_t) * sz);
-  memset(arr->head, v, sizeof(vec_t) * sz);
-}
-void iarr_init(iarr_t *arr, int sz, int v) {
-  int i;
-  arr->size = sz;
-  arr->head = (int*)malloc(sizeof(int) * sz);
-  for (i = 0; i < sz; ++i) {
-    arr->head[i] = v;
-  }
 }
 
 // parr_t
 void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
   if (arr->size <= idx) {
     assert(false);
-    arr->head = malloc(sizeof(vec_t) * (idx+1));
-    arr->size = idx + 1;
   }
   copy_pixel(&arr->head[idx], value);
 }
@@ -156,8 +133,39 @@ pixel_t* parr_get_nth(parr_t* arr, int idx) {
   return &arr->head[idx];
 }
 
+void varr_init(varr_t *arr, int sz, float v) {
+  int i;
+  arr->size = sz;
+  arr->head = (vec_t*)malloc(sizeof(vec_t) * sz);
+  for (i = 0; i < sz; ++i) {
+    arr->head[i].x = v;
+    arr->head[i].y = v;
+    arr->head[i].z = v;
+  }
+}
 
+void iarr_init(iarr_t *arr, int sz, int v) {
+  int i;
+  arr->size = sz;
+  arr->head = (int*)malloc(sizeof(int) * sz);
+  for (i = 0; i < sz; ++i) {
+    arr->head[i] = v;
+  }
+}
 
+parr_t* create_parr(int sz, pixel_t *p) {
+  int i;
+  parr_t *arr;
+  arr = (parr_t*) malloc(sizeof(parr_t));
+  arr->size = sz;
+  arr->head = (pixel_t*) malloc(sizeof(pixel_t) * sz);
+  for (i = 0; i < sz; ++i) {
+    memcpy(&arr->head[i], p, sizeof(pixel_t));
+  }
+  return arr;
+}
+
+// global
 /**************** グローバル変数の宣言 ****************/
 
 /* オブジェクトの個数 */
@@ -541,7 +549,7 @@ void p_set_group_id (pixel_t *pixel, int id) {
 
 /* 各衝突点における法線ベクトル */
 varr_t* p_nvectors (pixel_t *pixel) {
-  return &(pixel->nvectors);
+  return &pixel->nvectors;
 }
 
 /******************************************************************************
@@ -2100,7 +2108,7 @@ void write_ppm_header() {
   print_char(10);
 }
 
-void write_rgb_element(int x) {
+void write_rgb_element(float x) {
   int ix = int_of_float(x);
   int elem = ix;
   if (ix > 255) {
@@ -2165,7 +2173,7 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
 /* 各ピクセルに対して直接光追跡と間接受光の20%分の計算を行う */
 // iteration
 void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
-  if (x >= 0) {
+  while (x >= 0) {
     float xdisp = scan_pitch * float_of_int(x - image_center[0]);
     ptrace_dirvec.x = xdisp * screenx_dir.x + lc0;
     ptrace_dirvec.y = xdisp * screenx_dir.y + lc1;
@@ -2182,8 +2190,8 @@ void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, fl
     /* 間接光の20%を追跡 */
     pretrace_diffuse_rays(parr_get_nth(line, x), 0);
 
-    pretrace_pixels(line, x-1, add_mod5(group_id, 1), lc0, lc1, lc2);
-
+    --x;
+    group_id = (group_id + 1) % 5;
   }
 }
 
@@ -2254,27 +2262,10 @@ pixel_t *create_pixel() {
   return pixel;
 }
 
-
-/* 横方向1ライン中の各ピクセル要素を割り当てる */
-// iteration
-parr_t *init_line_elements(parr_t *line, int n) {
-  if (n >= 0) {
-    return init_line_elements(line, n-1);
-  } else {
-    return line;
-  }
-}
-
 /* 横方向1ライン分のピクセル配列を作る */
 parr_t *create_pixelline() {
-  int i;
-  int x = image_size[0];
-  parr_t *line = (parr_t *)malloc(sizeof(parr_t));
-
-  for (i = 0; i < x; ++i) {
-    //parr_set_nth(line, i, create_pixel());
-  }
-  return init_line_elements(line, image_size[0]-2);
+  parr_t *line = create_parr(image_size[0], create_pixel());
+  return line;
 }
 
 /******************************************************************************
@@ -2383,9 +2374,11 @@ void init_dirvec_constants(dvec_t vecset[], int index) {
   }
 }
 
+// iteration
 void init_vecset_constants(int index) {
   while (index >= 0) {
     init_dirvec_constants(dirvecs[index], 119);
+    --index;
   }
 }
 
