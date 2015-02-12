@@ -17,6 +17,7 @@
 #include <string.h>
 #include <assert.h>
 #include "runtime.h"
+#define D(...) fprintf(stderr, __VA_ARGS__);
 
 typedef struct {
   float x, y, z;
@@ -31,7 +32,8 @@ typedef struct {
   bool   isrot;
   vec_t  abc, xyz;
   bool   invert;
-  vec_t  surfparams, color, rot123;
+  float  surfparams[2];
+  vec_t  color, rot123;
   vec4_t ctbl;
 } obj_t;
 
@@ -55,6 +57,55 @@ typedef struct {
   int      gid;
   varr_t  nvectors;
 } pixel_t;
+
+void print_varr(varr_t *arr) {
+  int i;
+  for(i=0; i<arr->size; ++i) {
+    vec_t *v = &arr->head[i];
+    fprintf(stderr, "(%.3f, %.3f, %.3f) ", v->x, v->y, v->z);
+  }
+  fprintf(stderr, "\n");
+}
+void print_iarr(iarr_t *arr) {
+  int i;
+  for(i=0; i<arr->size; ++i) {
+    fprintf(stderr, "%d ", arr->head[i]);
+  }
+  fprintf(stderr, "\n");
+}
+void print_pixel(pixel_t *p) {
+  fprintf(stderr, "rgb: %.3f %.3f %.3f\n", p->rgb.x, p->rgb.y, p->rgb.z);
+  fprintf(stderr, "ps: %d\n", p->isect_ps.size);
+  print_varr(&p->isect_ps);
+  fprintf(stderr, "sids: %d\n", p->sids.size);
+  print_iarr(&p->sids);
+  fprintf(stderr, "cdif: %d\n", p->cdif.size);
+  //print_iarr(&p->cdif);
+  fprintf(stderr, "engy: %d\n", p->engy.size);
+  print_varr(&p->engy);
+  fprintf(stderr, "r20p: %d\n", p->r20p.size);
+  print_varr(&p->r20p);
+  fprintf(stderr, "gid: %d\n", p->gid);
+  fprintf(stderr, "nvec: %d\n", p->nvectors.size);
+  print_varr(&p->nvectors);
+}
+
+void print_vec (char *s, vec_t *v) {
+  D("%s %.3f %.3f %.3f\n", s, v->x, v->y, v->z);
+}
+void  print_obj(obj_t *o) {
+  D("tex: %d\n", o->tex);
+  D("shape: %d\n", o->shape);
+  D("surface: %d\n", o->surface);
+  D("isrot: %d\n", o->isrot);
+  print_vec("abc: ", &o->abc);
+  print_vec("xyz: ", &o->xyz);
+  D("invert: %d\n", o->invert);
+  D("s-param: %.3f %.3f\n", o->surfparams[0], o->surfparams[1]);
+  print_vec("color: ", &o->color);
+  print_vec("rot123: ", &o->rot123);
+  D("ctbl %.3f %.3f %.3f %.3f\n", o->ctbl.x, o->ctbl.y, o->ctbl.z, o->ctbl.w);
+}
 
 typedef struct {
   int size;
@@ -443,12 +494,12 @@ float o_param_z (obj_t *m) {
 
 /* 物体の拡散反射率 0.0 -- 1.0 */
 float o_diffuse (obj_t *m) {
-  return m->surfparams.x;
+  return m->surfparams[0];
 }
 
 /* 物体の不完全鏡面反射率 0.0 -- 1.0 */
 float o_hilight (obj_t *m) {
-  return m->surfparams.y;
+  return m->surfparams[1];
 }
 
 /* 物体色の R成分 */
@@ -683,19 +734,21 @@ bool read_nth_object(int n) {
 
   int texture = read_int();
   if (texture != -1) {
-    int form = read_int ();
-    int refltype = read_int ();
-    int isrot_p = read_int () ;
+    int form;
+    int refltype;
+    int isrot_p;
     vec_t abc;
     vec_t xyz;
     int m_invert;
-    vec_t reflparam;
+    float reflparam[2];
     vec_t color;
     vec_t rotation;
 
     bool m_invert2;
     vec4_t ctbl;
-
+    form = read_int();
+    refltype = read_int();
+    isrot_p = read_int();
     abc.x = read_float ();
     abc.y = read_float ();
     abc.z = read_float ();
@@ -707,8 +760,8 @@ bool read_nth_object(int n) {
 
     m_invert = fisneg (read_float ());
 
-    reflparam.x = read_float (); /* diffuse */
-    reflparam.y = read_float (); /* hilight */
+    reflparam[0] = read_float (); /* diffuse */
+    reflparam[1] = read_float (); /* hilight */
 
     color.x = read_float ();
     color.y = read_float ();
@@ -725,8 +778,28 @@ bool read_nth_object(int n) {
     /* 注: 下記正規化 (form = 2) 参照 */
     m_invert2 = form == 2 ? true : m_invert;
 
-    {
 
+
+    if (form == 3) {
+      /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
+
+      float a = abc.x;
+      float b = abc.y;
+      float c = abc.z;
+      abc.x = (a == 0.0) ? 0.0 : (sgn(a) / fsqr(a)); /* X^2 成分 */
+      abc.y = (b == 0.0) ? 0.0 : (sgn(b) / fsqr(b)); /* Y^2 成分 */
+      abc.z = (c == 0.0) ? 0.0 : (sgn(c) / fsqr(c)); /* Z^2 成分 */
+    } else if (form == 2) {
+      /* 平面: 法線ベクトルを正規化, 極性を負に統一 */
+      vecunit_sgn(&abc, !m_invert);
+    }
+
+    /* 2次形式行列に回転変換を施す */
+    if (isrot_p != 0) {
+      rotate_quadratic_matrix(&abc, &rotation);
+    }
+
+    {
       /* ここからあとは abc と rotation しか操作しない。*/
       objects[n].tex     = texture;
       objects[n].shape   = form;
@@ -738,31 +811,17 @@ bool read_nth_object(int n) {
 
       objects[n].invert  = m_invert2;
 
-      copy_vec(&objects[n].surfparams, &reflparam); /* reflection paramater */
+      /* reflection paramater */
+      objects[n].surfparams[0] = reflparam[0];
+      objects[n].surfparams[1] = reflparam[1];
+
       copy_vec(&objects[n].color,  &color);
       copy_vec(&objects[n].rot123, &rotation);
 
       copy_vec4(&objects[n].ctbl,  &ctbl);
     }
 
-    if (form == 3) {
-      /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
 
-      float a = abc.x;
-      float b = abc.y;
-      float c = abc.z;
-      abc.x = a == 0.0 ? 0.0 : sgn(a) / fsqr(a); /* X^2 成分 */
-      abc.y = b == 0.0 ? 0.0 : sgn(b) / fsqr(b); /* Y^2 成分 */
-      abc.z = c == 0.0 ? 0.0 : sgn(c) / fsqr(c); /* Z^2 成分 */
-    } else if (form == 2) {
-      /* 平面: 法線ベクトルを正規化, 極性を負に統一 */
-      vecunit_sgn(&abc, !m_invert);
-    }
-
-    /* 2次形式行列に回転変換を施す */
-    if (isrot_p != 0) {
-      rotate_quadratic_matrix(&abc, &rotation);
-    }
 
     return true;
   } else {
@@ -1484,8 +1543,8 @@ void solve_each_element(int iand_ofs, int *and_group, vec_t *dirvec) {
           float t = t0p + 0.01;
           vec_t *v = dirvec;
           float q0 = v->x * t + startp.x;
-          float q1 = v->x * t + startp.y;
-          float q2 = v->x * t + startp.z;
+          float q1 = v->y * t + startp.y;
+          float q2 = v->z * t + startp.z;
           if (check_all_inside(0, and_group, q0, q1, q2)) {
             tmin = t;
             vecset(&intersection_point, q0, q1, q2);
@@ -1525,12 +1584,16 @@ void trace_or_matrix(int ofs, int **or_network, vec_t *dirvec) {
   if (range_primitive == -1) { /* 全オブジェクト終了 */
     return;
   } else {
-    /* range primitive の衝突しなければ交点はない */
-    float t = solver(range_primitive, dirvec, &startp);
-    if (t != 0) {
-      float tp = solver_dist;
-      if (tp < tmin) {
-        solve_one_or_network(1, head, dirvec);
+    if (range_primitive == 99) { /* range primitive なし */
+      solve_one_or_network(1, head, dirvec);
+    } else {
+      /* range primitive の衝突しなければ交点はない */
+      float t = solver(range_primitive, dirvec, &startp);
+      if (t != 0) {
+        float tp = solver_dist;
+        if (tp < tmin) {
+          solve_one_or_network(1, head, dirvec);
+        }
       }
     }
     trace_or_matrix(ofs + 1, or_network, dirvec);
@@ -1542,8 +1605,8 @@ void trace_or_matrix(int ofs, int **or_network, vec_t *dirvec) {
 /* Vscan から、交点 crashed_point と衝突したオブジェクト        */
 /* crashed_object を返す。関数自体の返り値は交点の有無の真偽値。 */
 bool judge_intersection(vec_t *dirvec) {
-  float tmin = 1000000000.0;
   float t;
+  tmin = 1000000000.0;
   trace_or_matrix(0, or_net, dirvec);
   t = tmin;
   if (-0.1 < t) {
@@ -1886,15 +1949,16 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
         if (nref < 4) {
           iarr_set_nth(surface_ids, nref+1, -1);
         }
+        if (m_surface == 2) {
+          float energy2 = energy * (1.0 - o_diffuse(obj));
+          trace_ray(nref+1, energy2, dirvec, pixel, dist + tmin);
+        }
       }
 
-      if (m_surface == 2) {
-        float energy2 = energy * (1.0 - o_diffuse(obj));
-        trace_ray(nref+1, energy2, dirvec, pixel, dist + tmin);
-      }
     } else {
+      fprintf(stderr, "AAA:%d\n", nref);
       /* どの物体にも当たらなかった場合。光源からの光を加味 */
-      iarr_set_nth(surface_ids, nref+1, -1);
+      iarr_set_nth(surface_ids, nref, -1);
       if (nref != 0) {
         float hl = fneg(veciprod(dirvec, &light));
         /* 90°を超える場合は0 (光なし) */
@@ -2075,7 +2139,6 @@ void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next
     if (get_surface_id(pixel, nref) >= 0) {
       /* 周囲4点を補完に使えるか */
       if (neighbors_are_available(x, prev, cur, next, nref)) {
-
         /* 間接受光を計算するフラグが立っていれば実際に計算する */
         iarr_t *calc_diffuse = p_calc_diffuse(pixel);
         if (iarr_get_nth(calc_diffuse, nref)) {
@@ -2226,7 +2289,7 @@ void scan_pixel(int x, int y, parr_t *prev, parr_t *cur, parr_t *next) {
 
 
     /* 得られた値をPPMファイルに出力 */
-    write_rgb ();
+    write_rgb();
 
     scan_pixel(x + 1, y, prev, cur, next);
   }
@@ -2475,7 +2538,7 @@ void rt (int size_x, int size_y) {
 
 int main () {
 
-  rt(128, 128);
+  rt(1, 1);
 
   return 0;
 }
