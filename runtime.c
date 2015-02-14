@@ -52,16 +52,19 @@ float float_of_int(int i) {
   return (float) i;
 }
 
-float read_float() {
-  float f;
-  scanf("%f", &f);
-  return f;
+int read_int() {
+  unsigned n = 0;
+  n += getchar();
+  n += getchar() << 8;
+  n += getchar() << 16;
+  n += getchar() << 24;
+  return n;
 }
 
-int read_int() {
-  int i;
-  scanf("%d", &i);
-  return i;
+float read_float() {
+  union {unsigned i; float f;} u;
+  u.i = read_int();
+  return u.f;
 }
 
 void print_char(char c) {

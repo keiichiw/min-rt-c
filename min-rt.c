@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "runtime.h"
 #define D(...) fprintf(stderr, __VA_ARGS__);
 
@@ -58,6 +57,7 @@ typedef struct {
   varr_t  nvectors;
 } pixel_t;
 
+#if 0
 void print_varr(varr_t *arr) {
   int i;
   for(i=0; i<arr->size; ++i) {
@@ -106,6 +106,7 @@ void  print_obj(obj_t *o) {
   print_vec("rot123: ", &o->rot123);
   D("ctbl %.3f %.3f %.3f %.3f\n", o->ctbl.x, o->ctbl.y, o->ctbl.z, o->ctbl.w);
 }
+#endif
 
 typedef struct {
   int size;
@@ -141,13 +142,13 @@ void copy_pixel(pixel_t *dst, pixel_t *src) {
 // iarr_t
 void iarr_set_nth(iarr_t* arr, int idx, int value) {
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   arr->head[idx] = value;
 }
 int iarr_get_nth(iarr_t* arr, int idx) {
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   return arr->head[idx];
 }
@@ -156,7 +157,7 @@ int iarr_get_nth(iarr_t* arr, int idx) {
 // varr_t
 void varr_set_nth(varr_t* arr, int idx, vec_t *value) {
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   copy_vec(&arr->head[idx], value);
 }
@@ -164,7 +165,7 @@ void varr_set_nth(varr_t* arr, int idx, vec_t *value) {
 vec_t* varr_get_nth(varr_t* arr, int idx) {
   void vecbzero(vec_t*);
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   return &arr->head[idx];
 }
@@ -172,14 +173,14 @@ vec_t* varr_get_nth(varr_t* arr, int idx) {
 // parr_t
 void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   copy_pixel(&arr->head[idx], value);
 }
 
 pixel_t* parr_get_nth(parr_t* arr, int idx) {
   if (arr->size <= idx) {
-    assert(false);
+    abort();
   }
   return &arr->head[idx];
 }

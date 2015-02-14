@@ -359,6 +359,27 @@ let rec o_param_ctbl m =
   in
   m_ctbl
 in
+let rec print_vec s v =
+  if (Array.length v) = 3 then
+    Printf.eprintf "%s %.3f %.3f %.3f\n" s v.(0) v.(1) v.(2)
+in
+let rec print_obj obj =
+  let (tex, shape, surface, isrot,
+       abc, xyz,
+       invert, surfparams, color,
+       rot123, ctbl) = obj in
+  Printf.eprintf "tex %d\n" tex;
+  Printf.eprintf "shape %d\n" shape;
+  Printf.eprintf "surface %d\n" surface;
+  Printf.eprintf "isrot %d\n" isrot;
+  print_vec "abc: "  abc;
+  print_vec "xyz: "  xyz;
+  Printf.eprintf "invert: %b\n" invert;
+  Printf.eprintf "s-param: %.3f %.3f\n"  surfparams.(0) surfparams.(1);
+  print_vec "color: "  color;
+  print_vec "rot123: "  rot123;
+  Printf.eprintf "ctbl %.3f %.3f %.3f %.3f\n" ctbl.(0) ctbl.(1) ctbl.(2) ctbl.(3)
+in
 
 (******************************************************************************
    Pixelデータのメンバアクセス関数群
@@ -435,6 +456,39 @@ let rec p_nvectors pixel =
   let (xm_rgb, xm_isect_ps, xm_sids, xm_cdif, xm_engy,
        xm_r20p, xm_gid, m_nvectors ) = pixel in
   m_nvectors
+in
+
+let rec print_iarr arr =
+  let go i =
+    Printf.eprintf "%d " i in
+  Array.iter go arr;
+  Printf.eprintf "\n"
+in
+
+let rec print_varr arr =
+  let go v =
+    Printf.eprintf "(%.3f, %.3f, %.3f) " v.(0) v.(1) v.(2) in
+  Array.iter go arr;
+  Printf.eprintf "\n"
+in
+
+let rec print_pixel pixel =
+  let (rgb, isect_ps, sids, cdif, engy,
+       r20p, gid, nvectors ) = pixel in
+  Printf.eprintf "rgb: %.3f %.3f %.3f\n" rgb.(0) rgb.(1) rgb.(2);
+  Printf.eprintf "ps: %d\n" (Array.length isect_ps);
+  print_varr isect_ps;
+  Printf.eprintf "sids: %d\n" (Array.length sids);
+  print_iarr sids;
+  Printf.eprintf "cdif: %d\n" (Array.length cdif);
+  (*print_iarr cdif;*)
+  Printf.eprintf "engy: %d\n" (Array.length engy);
+  print_varr engy;
+  Printf.eprintf "r20p: %d\n" (Array.length r20p);
+  print_varr r20p;
+  Printf.eprintf "gid: %d\n" gid.(0);
+  Printf.eprintf "nvec: %d\n" (Array.length nvectors);
+  print_varr nvectors
 in
 
 (******************************************************************************
@@ -654,9 +708,8 @@ let rec read_nth_object n =
 
       (* 2次形式行列に回転変換を施す *)
       if isrot_p <> 0 then
-	rotate_quadratic_matrix abc rotation
+        rotate_quadratic_matrix abc rotation
       else ();
-
       true
      )
   else
@@ -2306,6 +2359,6 @@ let rec rt size_x size_y =
 )
 in
 
-let _ = rt 128 128
+let _ = rt 1 1
 
 in 0
