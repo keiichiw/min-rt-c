@@ -1333,7 +1333,6 @@ void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
     } else { /* second */
       dconst[index] = setup_second_table(v, m);
     }
-
     iter_setup_dirvec_constants(dirvec, index-1);
   }
 }
@@ -1502,13 +1501,23 @@ bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
     return false;
   } else {
     /* range primitive が無いか、またはrange_primitiveと交わる事を確認 */
-    bool no_rp = range_primitive == 99;  /* range primitive が無い */
-    int t = solver_fast(range_primitive, &light_dirvec, &intersection_point);
-    /* range primitive とぶつからなければ */
-    /* or group との交点はない            */
-    bool cross = (t != 0) && solver_dist < -0.1 && shadow_check_one_or_group(1, head);
+    bool test = false;
+    if (range_primitive == 99) { /* range primitive が無い */
+      test = true;
+    } else {
+      int t = solver_fast(range_primitive, &light_dirvec, &intersection_point);
+      /* range primitive とぶつからなければ */
+      /* or group との交点はない            */
+      if (t != 0) {
+        if (solver_dist < -0.1) {
+          if (shadow_check_one_or_group(1, head)) {
+            test = true;
+          }
+        }
+      }
+    }
 
-    if (no_rp || cross) {
+    if (test) {
       if (shadow_check_one_or_group(1, head)) {
         return true; /* 交点があるので、影に入る事が判明。探索終了 */
       } else {
@@ -1956,7 +1965,6 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       }
 
     } else {
-      fprintf(stderr, "AAA:%d\n", nref);
       /* どの物体にも当たらなかった場合。光源からの光を加味 */
       iarr_set_nth(surface_ids, nref, -1);
       if (nref != 0) {
@@ -2538,7 +2546,7 @@ void rt (int size_x, int size_y) {
 
 int main () {
 
-  rt(1, 1);
+  rt(128, 128);
 
   return 0;
 }
