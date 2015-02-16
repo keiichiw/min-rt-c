@@ -1701,8 +1701,8 @@ void trace_or_matrix_fast(int ofs, int **or_network, dvec_t *dirvec) {
 
 /**** トレース本体 ****/
 bool judge_intersection_fast(dvec_t *dirvec) {
-  float tmin = 1000000000.0;
   float t;
+  tmin = 1000000000.0;
   trace_or_matrix_fast(0, or_net, dirvec);
   t = tmin;
   if (-0.1 < t) {
