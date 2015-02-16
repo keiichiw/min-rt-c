@@ -46,14 +46,7 @@ float myatan(float f) {
 }
 
 int int_of_float(float f) {
-  int sgn = f < 0 ? -1 : 1;
-  float a = fabs(f);
-  float b = (int)a;
-  if (fabs(b - a) > 0.5) {
-    return sgn * (b + 1);
-  } else {
-    return sgn * b;
-  }
+  return (int)f;
 }
 
 float float_of_int(int i) {

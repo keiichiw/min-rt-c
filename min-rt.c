@@ -2212,7 +2212,7 @@ float adjust_position(float h, float ratio) {
 
 /* ベクトル達が出来るだけ球面状に一様に分布するような向きを計算する */
 // iteration
-void calc_dirvec(int icount, int x, int y, int rx, int ry, int group_id, int index) {
+void calc_dirvec(int icount, float x, float y, float rx, float ry, int group_id, int index) {
   if (icount >= 5) {
     float l  = sqrt(fsqr(x) + fsqr(y) + 1.0);
     float vx = x   / l;
