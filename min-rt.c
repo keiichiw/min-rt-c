@@ -49,11 +49,6 @@ typedef struct {
 
 
 typedef struct {
-  int size;
-  pixel_t *head;
-} parr_t;
-
-typedef struct {
   vec_t   vec;
   float *cnst[120]; // cnstの各要素は定数の配列(長さ4~6でオブジェクトの形による)
 } dvec_t;
@@ -79,33 +74,6 @@ void copy_pixel(pixel_t *dst, pixel_t *src) {
   memcpy(dst, src, sizeof(pixel_t));
 }
 
-
-// parr_t
-void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
-  if (arr->size <= idx) {
-    abort();
-  }
-  copy_pixel(&arr->head[idx], value);
-}
-
-pixel_t* parr_get_nth(parr_t* arr, int idx) {
-  if (arr->size <= idx) {
-    abort();
-  }
-  return &arr->head[idx];
-}
-
-parr_t* create_parr(int sz, pixel_t *p) {
-  int i;
-  parr_t *arr;
-  arr = (parr_t*) malloc(sizeof(parr_t));
-  arr->size = sz;
-  arr->head = (pixel_t*) malloc(sizeof(pixel_t) * sz);
-  for (i = 0; i < sz; ++i) {
-    memcpy(&arr->head[i], p, sizeof(pixel_t));
-  }
-  return arr;
-}
 
 // global
 /**************** グローバル変数の宣言 ****************/
@@ -1953,14 +1921,14 @@ void calc_diffuse_using_1point(pixel_t *pixel, int nref) {
 
 /* 自分と上下左右4点の追跡結果を加算して間接光を求める。本来は 300 本の光を
    追跡する必要があるが、5点加算するので1点あたり60本(20%)追跡するだけで済む */
-void calc_diffuse_using_5points(int x, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
-  vec_t *r_up     = p_received_ray_20percent(parr_get_nth(prev, x));
-  vec_t *r_left   = p_received_ray_20percent(parr_get_nth(cur, x-1));
-  vec_t *r_center = p_received_ray_20percent(parr_get_nth(cur, x));
-  vec_t *r_right  = p_received_ray_20percent(parr_get_nth(cur, x+1));
-  vec_t *r_down   = p_received_ray_20percent(parr_get_nth(next, x));
+void calc_diffuse_using_5points(int x, pixel_t *prev, pixel_t *cur, pixel_t *next, int nref) {
+  vec_t *r_up     = p_received_ray_20percent(&prev[x]);
+  vec_t *r_left   = p_received_ray_20percent(&cur[x-1]);
+  vec_t *r_center = p_received_ray_20percent(&cur[x]);
+  vec_t *r_right  = p_received_ray_20percent(&cur[x+1]);
+  vec_t *r_down   = p_received_ray_20percent(&next[x]);
 
-  vec_t *energya  = p_energy(parr_get_nth(cur, x));
+  vec_t *energya  = p_energy(&cur[x]);
 
   diffuse_ray = r_up[nref];
 
@@ -1990,7 +1958,7 @@ void do_without_neighbors(pixel_t *pixel, int nref) {
 }
 
 /* 画像上で上下左右に点があるか(要するに、画像の端で無い事)を確認 */
-bool neighbors_exist(int x, int y, parr_t *next) {
+bool neighbors_exist(int x, int y, pixel_t *next) {
   if (0 < y && y+1 < image_size[1]) {
     if (0 < x && x+1 < image_size[0]) {
       return true;
@@ -2006,12 +1974,12 @@ int get_surface_id(pixel_t *pixel, int index) {
 
 /* 上下左右4点の直接光追跡の結果、自分と同じ面に衝突しているかをチェック
    もし同じ面に衝突していれば、これら4点の結果を使うことで計算を省略出来る */
-bool neighbors_are_available(int x, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
-  int sid_center = get_surface_id(parr_get_nth(cur, x), nref);
-  if (get_surface_id(parr_get_nth(prev, x),  nref) == sid_center) {
-    if (get_surface_id(parr_get_nth(next, x),  nref) == sid_center) {
-      if (get_surface_id(parr_get_nth(cur, x-1), nref) == sid_center) {
-        if (get_surface_id(parr_get_nth(cur, x+1), nref) == sid_center) {
+bool neighbors_are_available(int x, pixel_t *prev, pixel_t *cur, pixel_t *next, int nref) {
+  int sid_center = get_surface_id(&cur[x], nref);
+  if (get_surface_id(&prev[x],  nref) == sid_center) {
+    if (get_surface_id(&next[x],  nref) == sid_center) {
+      if (get_surface_id(&cur[x-1], nref) == sid_center) {
+        if (get_surface_id(&cur[x+1], nref) == sid_center) {
           return true;
         }
       }
@@ -2024,8 +1992,8 @@ bool neighbors_are_available(int x, parr_t *prev, parr_t *cur, parr_t *next, int
    する。もし上下左右4点の計算結果を使えない場合は、その時点で
    do_without_neighborsに切り替える */
 // iteration
-void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
-  pixel_t *pixel = parr_get_nth(cur, x);
+void try_exploit_neighbors(int x, int y, pixel_t *prev, pixel_t *cur, pixel_t *next, int nref) {
+  pixel_t *pixel = &cur[x];
   if (nref <= 4) {
     /* 衝突面番号が有効(非負)か */
     if (get_surface_id(pixel, nref) >= 0) {
@@ -2040,7 +2008,7 @@ void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next
         try_exploit_neighbors(x, y, prev, cur, next, nref + 1);
       } else {
         /* 周囲4点を補完に使えないので、これらを使わない方法に切り替える */
-        do_without_neighbors(parr_get_nth(cur, x), nref);
+        do_without_neighbors(&cur[x], nref);
       }
     }
 
@@ -2126,7 +2094,7 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
 
 /* 各ピクセルに対して直接光追跡と間接受光の20%分の計算を行う */
 // iteration
-void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
+void pretrace_pixels(pixel_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
   while (x >= 0) {
     float xdisp = scan_pitch * float_of_int(x - image_center[0]);
     ptrace_dirvec.x = xdisp * screenx_dir.x + lc0;
@@ -2137,12 +2105,12 @@ void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, fl
     startp = viewpoint;
 
     /* 直接光追跡 */
-    trace_ray(0, 1.0, &ptrace_dirvec, parr_get_nth(line, x), 0.0);
-    *p_rgb(parr_get_nth(line, x)) = rgb;
-    p_set_group_id(parr_get_nth(line, x), group_id);
+    trace_ray(0, 1.0, &ptrace_dirvec, &line[x], 0.0);
+    *p_rgb(&line[x]) = rgb;
+    p_set_group_id(&line[x], group_id);
 
     /* 間接光の20%を追跡 */
-    pretrace_diffuse_rays(parr_get_nth(line, x), 0);
+    pretrace_diffuse_rays(&line[x], 0);
 
     --x;
     group_id = (group_id + 1) % 5;
@@ -2151,7 +2119,7 @@ void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, fl
 
 
 /* あるラインの各ピクセルに対し直接光追跡と間接受光20%分の計算をする */
-void pretrace_line(parr_t *line, int y, int group_id) {
+void pretrace_line(pixel_t *line, int y, int group_id) {
   float ydisp = scan_pitch * float_of_int(y - image_center[1]);
   /* ラインの中心に向かうベクトルを計算 */
   float lc0 = ydisp * screeny_dir.x + screenz_dir.x;
@@ -2166,16 +2134,16 @@ void pretrace_line(parr_t *line, int y, int group_id) {
 
 /* 各ピクセルの最終的なピクセル値を計算 */
 // iteration
-void scan_pixel(int x, int y, parr_t *prev, parr_t *cur, parr_t *next) {
+void scan_pixel(int x, int y, pixel_t *prev, pixel_t *cur, pixel_t *next) {
   if (x < image_size[0]) {
     /* まず、直接光追跡で得られたRGB値を得る */
-    rgb = *p_rgb(parr_get_nth(cur, x));
+    rgb = *p_rgb(&cur[x]);
 
     /* 次に、直接光の各衝突点について、間接受光による寄与を加味する */
     if (neighbors_exist(x, y, next)) {
       try_exploit_neighbors(x, y, prev, cur, next, 0);
     } else {
-      do_without_neighbors(parr_get_nth(cur, x), 0);
+      do_without_neighbors(&cur[x], 0);
     }
 
 
@@ -2188,7 +2156,7 @@ void scan_pixel(int x, int y, parr_t *prev, parr_t *cur, parr_t *next) {
 
 /* 一ライン分のピクセル値を計算 */
 // iteration
-void scan_line(int y, parr_t *prev, parr_t *cur, parr_t *next, int group_id) {
+void scan_line(int y, pixel_t *prev, pixel_t *cur, pixel_t *next, int group_id) {
   if (y < image_size[1]) {
     if (y < image_size[1] - 1) {
       pretrace_line(next, y + 1, group_id);
@@ -2203,8 +2171,7 @@ void scan_line(int y, parr_t *prev, parr_t *cur, parr_t *next, int group_id) {
    ピクセルの情報を格納するデータ構造の割り当て関数群
  *****************************************************************************/
 /* ピクセルを表すtupleを割り当て */
-pixel_t *create_pixel() {
-  pixel_t *pixel = malloc(sizeof(pixel_t));
+void create_pixel(pixel_t *pixel) {
   vecbzero(&pixel->rgb);
   pixel->isect_ps = calloc(sizeof(vec_t), 5);
   pixel->sids = calloc(sizeof(int), 5);
@@ -2213,12 +2180,15 @@ pixel_t *create_pixel() {
   pixel->r20p = calloc(sizeof(vec_t), 5);
   pixel->gid = 0;
   pixel->nvectors = calloc(sizeof(vec_t), 5);
-  return pixel;
 }
 
 /* 横方向1ライン分のピクセル配列を作る */
-parr_t *create_pixelline() {
-  parr_t *line = create_parr(image_size[0], create_pixel());
+pixel_t *create_pixelline() {
+  pixel_t *line = calloc(sizeof(pixel_t), image_size[0]);
+  int i;
+  for (i = 0; i < image_size[0]; ++i) {
+    create_pixel(&line[i]);
+  }
   return line;
 }
 
@@ -2379,7 +2349,7 @@ void setup_reflections(int obj_id) {
 
 /* レイトレの各ステップを行う関数を順次呼び出す */
 void rt (int size_x, int size_y) {
-  parr_t *prev, *cur, *next;
+  pixel_t *prev, *cur, *next;
   image_size[0] = size_x;
   image_size[1] = size_y;
   image_center[0] = size_x / 2;
