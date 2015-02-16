@@ -37,19 +37,14 @@ typedef struct {
 } obj_t;
 
 typedef struct {
-  int     size;
-  vec_t *head;
-} varr_t;
-
-typedef struct {
   vec_t   rgb;
-  varr_t  isect_ps;
-  int     *sids;
-  int     *cdif;
-  varr_t  engy;
-  varr_t  r20p;
-  int      gid;
-  varr_t  nvectors;
+  vec_t  *isect_ps;
+  int    *sids;
+  int    *cdif;
+  vec_t  *engy;
+  vec_t  *r20p;
+  int     gid;
+  vec_t  *nvectors;
 } pixel_t;
 
 
@@ -85,22 +80,6 @@ void copy_pixel(pixel_t *dst, pixel_t *src) {
 }
 
 
-// varr_t
-void varr_set_nth(varr_t* arr, int idx, vec_t *value) {
-  if (arr->size <= idx) {
-    abort();
-  }
-  copy_vec(&arr->head[idx], value);
-}
-
-vec_t* varr_get_nth(varr_t* arr, int idx) {
-  void vecbzero(vec_t*);
-  if (arr->size <= idx) {
-    abort();
-  }
-  return &arr->head[idx];
-}
-
 // parr_t
 void parr_set_nth(parr_t* arr, int idx, pixel_t *value) {
   if (arr->size <= idx) {
@@ -115,18 +94,6 @@ pixel_t* parr_get_nth(parr_t* arr, int idx) {
   }
   return &arr->head[idx];
 }
-
-void varr_init(varr_t *arr, int sz, float v) {
-  int i;
-  arr->size = sz;
-  arr->head = (vec_t*)malloc(sizeof(vec_t) * sz);
-  for (i = 0; i < sz; ++i) {
-    arr->head[i].x = v;
-    arr->head[i].y = v;
-    arr->head[i].z = v;
-  }
-}
-
 
 parr_t* create_parr(int sz, pixel_t *p) {
   int i;
@@ -264,12 +231,6 @@ void vecbzero (vec_t *v) {
   vecfill(v, 0.0);
 }
 
-/* コピー */
-void veccpy (vec_t *dest, vec_t *src) {
-  dest->x = src->x;
-  dest->y = src->y;
-  dest->z = src->z;
-}
 
 /* 距離の自乗 */
 float vecdist2 (vec_t *p, vec_t *q) {
@@ -478,8 +439,8 @@ vec_t *p_rgb (pixel_t *pixel) {
 }
 
 /* 飛ばした光が物体と衝突した点の配列 */
-varr_t *p_intersection_points (pixel_t *pixel) {
-  return &pixel->isect_ps;
+vec_t *p_intersection_points (pixel_t *pixel) {
+  return pixel->isect_ps;
 }
 
 /* 飛ばした光が衝突した物体面番号の配列 */
@@ -494,13 +455,13 @@ int *p_calc_diffuse (pixel_t *pixel) {
 }
 
 /* 衝突点の間接受光エネルギーがピクセル輝度に与える寄与の大きさ */
-varr_t *p_energy (pixel_t*pixel) {
-  return &pixel->engy;
+vec_t *p_energy (pixel_t *pixel) {
+  return pixel->engy;
 }
 
 /* 衝突点の間接受光エネルギーを光線本数を1/5に間引きして計算した値 */
-varr_t *p_received_ray_20percent (pixel_t *pixel) {
-  return &pixel->r20p;
+vec_t *p_received_ray_20percent (pixel_t *pixel) {
+  return pixel->r20p;
 }
 
 /* このピクセルのグループ ID */
@@ -523,8 +484,8 @@ void p_set_group_id (pixel_t *pixel, int id) {
 }
 
 /* 各衝突点における法線ベクトル */
-varr_t* p_nvectors (pixel_t *pixel) {
-  return &pixel->nvectors;
+vec_t *p_nvectors (pixel_t *pixel) {
+  return pixel->nvectors;
 }
 
 /******************************************************************************
@@ -1291,7 +1252,7 @@ void setup_startp_constants(vec_t *p, int index) {
 }
 
 void setup_startp(vec_t *p) {
-  veccpy(&startp_fast, p);
+  startp_fast = *p;
   setup_startp_constants(p, n_objects - 1);
 }
 
@@ -1835,31 +1796,30 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       obj_t *obj = &objects[obj_id];
       int m_surface = o_reflectiontype(obj);
       float diffuse = o_diffuse(obj) * energy;
-      varr_t *intersection_points;
+      vec_t *intersection_points;
       int *calc_diffuse;
       float w, hilight_scale;
       get_nvector(obj, dirvec); /* 法線ベクトルを get */
-      veccpy(&startp, &intersection_point);  /* 交差点を新たな光の発射点とする */
+      startp = intersection_point;  /* 交差点を新たな光の発射点とする */
       utexture(obj, &intersection_point); /*テクスチャを計算 */
 
       /* pixel tupleに情報を格納する */
       surface_ids[nref] = obj_id * 4 + intsec_rectside;
       intersection_points = p_intersection_points(pixel);
-      veccpy(varr_get_nth(intersection_points, nref),
-             &intersection_point);
+      intersection_points[nref] = intersection_point;
       /* 拡散反射率が0.5以上の場合のみ間接光のサンプリングを行う */
 
       calc_diffuse = p_calc_diffuse(pixel);
       if (o_diffuse(obj) < 0.5) {
         calc_diffuse[nref] = false;
       } else {
-        varr_t *energya  = p_energy(pixel);
-        varr_t *nvectors = p_nvectors(pixel);
+        vec_t *energya  = p_energy(pixel);
+        vec_t *nvectors = p_nvectors(pixel);
         calc_diffuse[nref] = true;
-        varr_set_nth(energya, nref, &texture_color);
-        vecscale(varr_get_nth(energya, nref),
+        energya[nref] = texture_color;
+        vecscale(&energya[nref],
                  (1.0 / 256.0) * diffuse);
-        varr_set_nth(nvectors, nref, &nvector);
+        nvectors[nref] = nvector;
       }
 
       w = (-2.0) * veciprod(dirvec, &nvector);
@@ -1980,36 +1940,36 @@ void trace_diffuse_ray_80percent(int group_id, vec_t *nvector, vec_t *org) {
 /* 上下左右4点の間接光追跡結果を使わず、300本全部のベクトルを追跡して間接光を
    計算する。20%(60本)は追跡済なので、残り80%(240本)を追跡する */
 void calc_diffuse_using_1point(pixel_t *pixel, int nref) {
-  varr_t *ray20p = p_received_ray_20percent(pixel);
-  varr_t  *nvectors = p_nvectors(pixel);
-  varr_t  *intersection_points = p_intersection_points(pixel);
-  varr_t *energya = p_energy(pixel);
-  veccpy(&diffuse_ray, varr_get_nth(ray20p, nref));
+  vec_t *ray20p = p_received_ray_20percent(pixel);
+  vec_t *nvectors = p_nvectors(pixel);
+  vec_t *intersection_points = p_intersection_points(pixel);
+  vec_t *energya = p_energy(pixel);
+  diffuse_ray = ray20p[nref];
   trace_diffuse_ray_80percent(p_group_id(pixel),
-                              varr_get_nth(nvectors, nref),
-                              varr_get_nth(intersection_points, nref));
-  vecaccumv(&rgb, varr_get_nth(energya, nref), &diffuse_ray);
+                              &nvectors[nref],
+                              &intersection_points[nref]);
+  vecaccumv(&rgb, &energya[nref], &diffuse_ray);
 }
 
 /* 自分と上下左右4点の追跡結果を加算して間接光を求める。本来は 300 本の光を
    追跡する必要があるが、5点加算するので1点あたり60本(20%)追跡するだけで済む */
 void calc_diffuse_using_5points(int x, parr_t *prev, parr_t *cur, parr_t *next, int nref) {
-  varr_t *r_up     = p_received_ray_20percent(parr_get_nth(prev, x));
-  varr_t *r_left   = p_received_ray_20percent(parr_get_nth(cur, x-1));
-  varr_t *r_center = p_received_ray_20percent(parr_get_nth(cur, x));
-  varr_t *r_right  = p_received_ray_20percent(parr_get_nth(cur, x+1));
-  varr_t *r_down   = p_received_ray_20percent(parr_get_nth(next, x));
+  vec_t *r_up     = p_received_ray_20percent(parr_get_nth(prev, x));
+  vec_t *r_left   = p_received_ray_20percent(parr_get_nth(cur, x-1));
+  vec_t *r_center = p_received_ray_20percent(parr_get_nth(cur, x));
+  vec_t *r_right  = p_received_ray_20percent(parr_get_nth(cur, x+1));
+  vec_t *r_down   = p_received_ray_20percent(parr_get_nth(next, x));
 
-  varr_t *energya  = p_energy(parr_get_nth(cur, x));
+  vec_t *energya  = p_energy(parr_get_nth(cur, x));
 
-  veccpy(&diffuse_ray, varr_get_nth(r_up,     nref));
+  diffuse_ray = r_up[nref];
 
-  vecadd(&diffuse_ray, varr_get_nth(r_left,   nref));
-  vecadd(&diffuse_ray, varr_get_nth(r_center, nref));
-  vecadd(&diffuse_ray, varr_get_nth(r_right,  nref));
-  vecadd(&diffuse_ray, varr_get_nth(r_down,   nref));
+  vecadd(&diffuse_ray, &r_left[nref]);
+  vecadd(&diffuse_ray, &r_center[nref]);
+  vecadd(&diffuse_ray, &r_right[nref]);
+  vecadd(&diffuse_ray, &r_down[nref]);
 
-  vecaccumv(&rgb, varr_get_nth(energya, nref), &diffuse_ray);
+  vecaccumv(&rgb, &energya[nref], &diffuse_ray);
 
 }
 
@@ -2142,9 +2102,9 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
       int *calc_diffuse = p_calc_diffuse(pixel);
       if (calc_diffuse[nref]) {
         int group_id = p_group_id(pixel);
-        varr_t *nvectors;
-        varr_t *intersection_points;
-        varr_t *ray20p;
+        vec_t *nvectors;
+        vec_t *intersection_points;
+        vec_t *ray20p;
         vecbzero(&diffuse_ray);
 
         /* 5つの方向ベクトル集合(各60本)から自分のグループIDに対応する物を
@@ -2152,11 +2112,10 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
         nvectors = p_nvectors(pixel);
         intersection_points = p_intersection_points(pixel);
         trace_diffuse_rays(dirvecs[group_id],
-                           varr_get_nth(nvectors, nref),
-                           varr_get_nth(intersection_points, nref));
+                           &nvectors[nref],
+                           &intersection_points[nref]);
         ray20p = p_received_ray_20percent(pixel);
-        veccpy(varr_get_nth(ray20p, nref),
-               &diffuse_ray);
+        ray20p[nref] = diffuse_ray;
       }
       pretrace_diffuse_rays(pixel, nref+1);
     }
@@ -2175,11 +2134,11 @@ void pretrace_pixels(parr_t *line, int x, int group_id, float lc0, float lc1, fl
     ptrace_dirvec.z = xdisp * screenx_dir.z + lc2;
     vecunit_sgn(&ptrace_dirvec, false);
     vecbzero(&rgb);
-    veccpy(&startp, &viewpoint);
+    startp = viewpoint;
 
     /* 直接光追跡 */
     trace_ray(0, 1.0, &ptrace_dirvec, parr_get_nth(line, x), 0.0);
-    veccpy(p_rgb(parr_get_nth(line, x)), &rgb);
+    *p_rgb(parr_get_nth(line, x)) = rgb;
     p_set_group_id(parr_get_nth(line, x), group_id);
 
     /* 間接光の20%を追跡 */
@@ -2210,7 +2169,7 @@ void pretrace_line(parr_t *line, int y, int group_id) {
 void scan_pixel(int x, int y, parr_t *prev, parr_t *cur, parr_t *next) {
   if (x < image_size[0]) {
     /* まず、直接光追跡で得られたRGB値を得る */
-    veccpy(&rgb, p_rgb(parr_get_nth(cur, x)));
+    rgb = *p_rgb(parr_get_nth(cur, x));
 
     /* 次に、直接光の各衝突点について、間接受光による寄与を加味する */
     if (neighbors_exist(x, y, next)) {
@@ -2247,13 +2206,13 @@ void scan_line(int y, parr_t *prev, parr_t *cur, parr_t *next, int group_id) {
 pixel_t *create_pixel() {
   pixel_t *pixel = malloc(sizeof(pixel_t));
   vecbzero(&pixel->rgb);
-  varr_init(&pixel->isect_ps, 5, 0.0);
+  pixel->isect_ps = calloc(sizeof(vec_t), 5);
   pixel->sids = calloc(sizeof(int), 5);
-  pixel->cdif = calloc(sizeof(int), false);
-  varr_init(&pixel->engy, 5, 0.0);
-  varr_init(&pixel->r20p, 5, 0.0);
+  pixel->cdif = calloc(sizeof(int), 5);
+  pixel->engy = calloc(sizeof(vec_t), 5);
+  pixel->r20p = calloc(sizeof(vec_t), 5);
   pixel->gid = 0;
-  varr_init(&pixel->nvectors, 5, 0.0);
+  pixel->nvectors = calloc(sizeof(vec_t), 5);
   return pixel;
 }
 
@@ -2331,33 +2290,6 @@ void calc_dirvec_rows(int row, int group_id, int index) {
 }
 
 
-/******************************************************************************
-   dirvec のメモリ割り当てを行う
-*****************************************************************************/
-/*
-dvec_t *create_dirvec() {
-  dvec_t *dv = (dvec_t*)malloc(sizeof(dvec_t));
-  vecbzero(&dv->vec);
-  return dv;
-}
-
-void create_dirvec_elements(dvec_t *d, int index) {
-  while (index >= 0) {
-    d[index] = create_dirvec();
-    --index;
-  }
-}
-*/
-void create_dirvecs(int index) {
-  /*
-  while (index >=0) {
-    dirvecs[index] = (dvec_t*)malloc(sizeof(dvec_t) * 120);
-    create_dirvec_elements(dirvecs[index], 118);
-    --index;
-  }
-  */
-}
-
 
 /******************************************************************************
    補助関数達を呼び出してdirvecの初期化を行う
@@ -2378,7 +2310,6 @@ void init_vecset_constants(int index) {
 }
 
 void init_dirvecs() {
-  create_dirvecs(4);
   calc_dirvec_rows(9, 0, 0);
   init_vecset_constants(4);
 }
@@ -2460,7 +2391,7 @@ void rt (int size_x, int size_y) {
   read_parameter();
   write_ppm_header();
   init_dirvecs();
-  veccpy(d_vec(&light_dirvec), &light);
+  *d_vec(&light_dirvec) = light;
   setup_dirvec_constants(&light_dirvec);
   setup_reflections(n_objects - 1);
   pretrace_line(cur, 0, 0);
