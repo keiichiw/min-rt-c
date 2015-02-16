@@ -1875,7 +1875,7 @@ void iter_trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org, i
     if (fisneg(p)) {
       trace_diffuse_ray(&dirvec_group[index+1], p / -150.0);
     } else {
-      trace_diffuse_ray(&dirvec_group[index],   p / -150.0);
+      trace_diffuse_ray(&dirvec_group[index],   p /  150.0);
     }
     iter_trace_diffuse_rays(dirvec_group, nvector, org, (index - 2));
   }
