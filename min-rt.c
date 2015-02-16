@@ -927,7 +927,7 @@ int solver(int index, vec_t *dirvec, vec_t *org) {
 */
 
 /***** solver_rectのdirvecテーブル使用高速版 ******/
-bool solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, float b2) {
+int solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, float b2) {
   float d0 = (dconst[0] - b0) * dconst[1];
   bool tmp0;
   float d1 = (dconst[2] - b1) * dconst[3];
@@ -1488,7 +1488,7 @@ void solve_each_element_fast(int iand_ofs, int *and_group, dvec_t *dirvec) {
   if (iobj == -1) {
     return;
   } else {
-    float t0 = solver_fast2(iobj, dirvec);
+    int t0 = solver_fast2(iobj, dirvec);
     if (t0 != 0) {
       /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
       /* 今までの中で最小の t の値と比べる。*/
@@ -1618,8 +1618,8 @@ void get_nvector_second(obj_t *m) {
     nvector.z = d2;
   } else {
     nvector.x = d0 + fhalf(p1 * o_param_r3(m) + p2 * o_param_r2(m));
-    nvector.y = d0 + fhalf(p0 * o_param_r3(m) + p2 * o_param_r1(m));
-    nvector.z = d0 + fhalf(p0 * o_param_r2(m) + p1 * o_param_r1(m));
+    nvector.y = d1 + fhalf(p0 * o_param_r3(m) + p2 * o_param_r1(m));
+    nvector.z = d2 + fhalf(p0 * o_param_r2(m) + p1 * o_param_r1(m));
   }
   vecunit_sgn(&nvector, o_isinvert(m));
 }
