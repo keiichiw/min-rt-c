@@ -37,11 +37,6 @@ typedef struct {
 } obj_t;
 
 typedef struct {
-  int   size;
-  int  *head;
-} iarr_t;
-
-typedef struct {
   int     size;
   vec_t *head;
 } varr_t;
@@ -49,64 +44,14 @@ typedef struct {
 typedef struct {
   vec_t   rgb;
   varr_t  isect_ps;
-  iarr_t  sids;
-  iarr_t  cdif;
+  int     *sids;
+  int     *cdif;
   varr_t  engy;
   varr_t  r20p;
   int      gid;
   varr_t  nvectors;
 } pixel_t;
 
-#if 0
-void print_varr(varr_t *arr) {
-  int i;
-  for(i=0; i<arr->size; ++i) {
-    vec_t *v = &arr->head[i];
-    fprintf(stderr, "(%.3f, %.3f, %.3f) ", v->x, v->y, v->z);
-  }
-  fprintf(stderr, "\n");
-}
-void print_iarr(iarr_t *arr) {
-  int i;
-  for(i=0; i<arr->size; ++i) {
-    fprintf(stderr, "%d ", arr->head[i]);
-  }
-  fprintf(stderr, "\n");
-}
-void print_pixel(pixel_t *p) {
-  fprintf(stderr, "rgb: %.3f %.3f %.3f\n", p->rgb.x, p->rgb.y, p->rgb.z);
-  fprintf(stderr, "ps: %d\n", p->isect_ps.size);
-  print_varr(&p->isect_ps);
-  fprintf(stderr, "sids: %d\n", p->sids.size);
-  print_iarr(&p->sids);
-  fprintf(stderr, "cdif: %d\n", p->cdif.size);
-  //print_iarr(&p->cdif);
-  fprintf(stderr, "engy: %d\n", p->engy.size);
-  print_varr(&p->engy);
-  fprintf(stderr, "r20p: %d\n", p->r20p.size);
-  print_varr(&p->r20p);
-  fprintf(stderr, "gid: %d\n", p->gid);
-  fprintf(stderr, "nvec: %d\n", p->nvectors.size);
-  print_varr(&p->nvectors);
-}
-
-void print_vec (char *s, vec_t *v) {
-  D("%s %.3f %.3f %.3f\n", s, v->x, v->y, v->z);
-}
-void  print_obj(obj_t *o) {
-  D("tex: %d\n", o->tex);
-  D("shape: %d\n", o->shape);
-  D("surface: %d\n", o->surface);
-  D("isrot: %d\n", o->isrot);
-  print_vec("abc: ", &o->abc);
-  print_vec("xyz: ", &o->xyz);
-  D("invert: %d\n", o->invert);
-  D("s-param: %.3f %.3f\n", o->surfparams[0], o->surfparams[1]);
-  print_vec("color: ", &o->color);
-  print_vec("rot123: ", &o->rot123);
-  D("ctbl %.3f %.3f %.3f %.3f\n", o->ctbl.x, o->ctbl.y, o->ctbl.z, o->ctbl.w);
-}
-#endif
 
 typedef struct {
   int size;
@@ -137,20 +82,6 @@ void copy_vec4(vec4_t *dst, vec4_t *src) {
 
 void copy_pixel(pixel_t *dst, pixel_t *src) {
   memcpy(dst, src, sizeof(pixel_t));
-}
-
-// iarr_t
-void iarr_set_nth(iarr_t* arr, int idx, int value) {
-  if (arr->size <= idx) {
-    abort();
-  }
-  arr->head[idx] = value;
-}
-int iarr_get_nth(iarr_t* arr, int idx) {
-  if (arr->size <= idx) {
-    abort();
-  }
-  return arr->head[idx];
 }
 
 
@@ -196,14 +127,6 @@ void varr_init(varr_t *arr, int sz, float v) {
   }
 }
 
-void iarr_init(iarr_t *arr, int sz, int v) {
-  int i;
-  arr->size = sz;
-  arr->head = (int*)malloc(sizeof(int) * sz);
-  for (i = 0; i < sz; ++i) {
-    arr->head[i] = v;
-  }
-}
 
 parr_t* create_parr(int sz, pixel_t *p) {
   int i;
@@ -561,13 +484,13 @@ varr_t *p_intersection_points (pixel_t *pixel) {
 
 /* 飛ばした光が衝突した物体面番号の配列 */
 /* 物体面番号は オブジェクト番号 * 4 + (solverの返り値) */
-iarr_t *p_surface_ids (pixel_t *pixel) {
-  return &pixel->sids;
+int *p_surface_ids (pixel_t *pixel) {
+  return pixel->sids;
 }
 
 /* 間接受光を計算するか否かのフラグ */
-iarr_t *p_calc_diffuse (pixel_t *pixel) {
-  return &pixel->cdif;
+int *p_calc_diffuse (pixel_t *pixel) {
+  return pixel->cdif;
 }
 
 /* 衝突点の間接受光エネルギーがピクセル輝度に与える寄与の大きさ */
@@ -1905,7 +1828,7 @@ void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dir
 // iteration
 void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist) {
   if (nref <= 4) {
-    iarr_t *surface_ids = p_surface_ids(pixel);
+    int *surface_ids = p_surface_ids(pixel);
     if (judge_intersection(dirvec)) {
       /* オブジェクトにぶつかった場合 */
       int obj_id = intersected_object_id;
@@ -1913,14 +1836,14 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       int m_surface = o_reflectiontype(obj);
       float diffuse = o_diffuse(obj) * energy;
       varr_t *intersection_points;
-      iarr_t *calc_diffuse;
+      int *calc_diffuse;
       float w, hilight_scale;
       get_nvector(obj, dirvec); /* 法線ベクトルを get */
       veccpy(&startp, &intersection_point);  /* 交差点を新たな光の発射点とする */
       utexture(obj, &intersection_point); /*テクスチャを計算 */
 
       /* pixel tupleに情報を格納する */
-      iarr_set_nth(surface_ids, nref, obj_id * 4 + intsec_rectside);
+      surface_ids[nref] = obj_id * 4 + intsec_rectside;
       intersection_points = p_intersection_points(pixel);
       veccpy(varr_get_nth(intersection_points, nref),
              &intersection_point);
@@ -1928,11 +1851,11 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
 
       calc_diffuse = p_calc_diffuse(pixel);
       if (o_diffuse(obj) < 0.5) {
-        iarr_set_nth(calc_diffuse, nref, false);
+        calc_diffuse[nref] = false;
       } else {
         varr_t *energya  = p_energy(pixel);
         varr_t *nvectors = p_nvectors(pixel);
-        iarr_set_nth(calc_diffuse, nref, true);
+        calc_diffuse[nref] = true;
         varr_set_nth(energya, nref, &texture_color);
         vecscale(varr_get_nth(energya, nref),
                  (1.0 / 256.0) * diffuse);
@@ -1957,7 +1880,7 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       /* 重みが 0.1より多く残っていたら、鏡面反射元を追跡する */
       if (0.1 < energy) {
         if (nref < 4) {
-          iarr_set_nth(surface_ids, nref+1, -1);
+          surface_ids[nref+1] = -1;
         }
         if (m_surface == 2) {
           float energy2 = energy * (1.0 - o_diffuse(obj));
@@ -1967,7 +1890,7 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
 
     } else {
       /* どの物体にも当たらなかった場合。光源からの光を加味 */
-      iarr_set_nth(surface_ids, nref, -1);
+      surface_ids[nref] = -1;
       if (nref != 0) {
         float hl = fneg(veciprod(dirvec, &light));
         /* 90°を超える場合は0 (光なし) */
@@ -2095,10 +2018,10 @@ void calc_diffuse_using_5points(int x, parr_t *prev, parr_t *cur, parr_t *next, 
 void do_without_neighbors(pixel_t *pixel, int nref) {
   if (nref <= 4) {
     /* 衝突面番号が有効(非負)かチェック */
-    iarr_t *surface_ids = p_surface_ids(pixel);
-    if (iarr_get_nth(surface_ids, nref) >= 0) {
-      iarr_t *calc_diffuse = p_calc_diffuse(pixel);
-      if (iarr_get_nth(calc_diffuse, nref)) {
+    int *surface_ids = p_surface_ids(pixel);
+    if (surface_ids[nref] >= 0) {
+      int *calc_diffuse = p_calc_diffuse(pixel);
+      if (calc_diffuse[nref]) {
         calc_diffuse_using_1point(pixel, nref);
       }
       do_without_neighbors(pixel, nref+1);
@@ -2117,8 +2040,8 @@ bool neighbors_exist(int x, int y, parr_t *next) {
 }
 
 int get_surface_id(pixel_t *pixel, int index) {
-  iarr_t *surface_ids = p_surface_ids(pixel);
-  return iarr_get_nth(surface_ids, index);
+  int *surface_ids = p_surface_ids(pixel);
+  return surface_ids[index];
 }
 
 /* 上下左右4点の直接光追跡の結果、自分と同じ面に衝突しているかをチェック
@@ -2149,8 +2072,8 @@ void try_exploit_neighbors(int x, int y, parr_t *prev, parr_t *cur, parr_t *next
       /* 周囲4点を補完に使えるか */
       if (neighbors_are_available(x, prev, cur, next, nref)) {
         /* 間接受光を計算するフラグが立っていれば実際に計算する */
-        iarr_t *calc_diffuse = p_calc_diffuse(pixel);
-        if (iarr_get_nth(calc_diffuse, nref)) {
+        int *calc_diffuse = p_calc_diffuse(pixel);
+        if (calc_diffuse[nref]) {
           calc_diffuse_using_5points(x, prev, cur, next, nref);
         }
         /* 次の反射衝突点へ */
@@ -2216,8 +2139,8 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
     int sid = get_surface_id(pixel, nref);
     if (sid >= 0) {
       /* 間接光を計算するフラグが立っているか */
-      iarr_t *calc_diffuse = p_calc_diffuse(pixel);
-      if (iarr_get_nth(calc_diffuse, nref)) {
+      int *calc_diffuse = p_calc_diffuse(pixel);
+      if (calc_diffuse[nref]) {
         int group_id = p_group_id(pixel);
         varr_t *nvectors;
         varr_t *intersection_points;
@@ -2325,8 +2248,8 @@ pixel_t *create_pixel() {
   pixel_t *pixel = malloc(sizeof(pixel_t));
   vecbzero(&pixel->rgb);
   varr_init(&pixel->isect_ps, 5, 0.0);
-  iarr_init(&pixel->sids, 5, 0);
-  iarr_init(&pixel->cdif, 5, false);
+  pixel->sids = calloc(sizeof(int), 5);
+  pixel->cdif = calloc(sizeof(int), false);
   varr_init(&pixel->engy, 5, 0.0);
   varr_init(&pixel->r20p, 5, 0.0);
   pixel->gid = 0;
