@@ -997,7 +997,7 @@ int solver_second_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
   if (fiszero(aa)) {
     return 0;
   } else {
-    float neg_bb = dconst[1] * b0 + dconst[1] * b1 + dconst[3] * b2;
+    float neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
     float cc0 = quadratic(m, b0, b1, b2);
     float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
     float d = fsqr(neg_bb) - aa * cc;
@@ -1300,7 +1300,7 @@ bool shadow_check_and_group(int iand_ofs, int *and_group) {
     return false;
   } else {
     int obj   = and_group[iand_ofs];
-    float t0  = solver_fast(obj, &light_dirvec, &intersection_point);
+    int t0  = solver_fast(obj, &light_dirvec, &intersection_point);
     float t0p = solver_dist;
     if (t0 != 0 && t0p < -0.2) {
       /* Q: 交点の候補。実際にすべてのオブジェクトに */
