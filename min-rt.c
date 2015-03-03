@@ -59,6 +59,34 @@ typedef struct {
   float br;
 } refl_t;
 
+
+void print_vec (char *s, vec_t *v) {
+  D2("%s %f %f %f\n", s, v->x, v->y, v->z);
+}
+void print_vec_always (char *s, vec_t *v) {
+  D("%s %f %f %f\n", s, v->x, v->y, v->z);
+}
+void print_pixel(pixel_t *p) {
+  int i;
+  D2("ps");
+  for(i=0;i<5;++i){
+    print_vec("", &p->isect_ps[i]);
+  }
+  D2("sids");
+  for(i=0;i<5;++i){
+    D2("%d ", p->sids[i]);
+  }
+  D2("engy");
+  for(i=0;i<5;++i){
+     print_vec("", &p->engy[i]);
+  }
+
+  D2("r20p");
+  for(i=0;i<5;++i){
+     print_vec("", &p->r20p[i]);
+  }
+}
+
 void copy_obj(obj_t *dst, obj_t *src) {
   memcpy(dst, src, sizeof(obj_t));
 }
