@@ -765,8 +765,8 @@ int **read_or_network(int length) {
 
 void read_and_network (int n) {
   int *net = read_net_item(0);
+  and_net[n] = net;
   if (net[0] != -1) {
-    and_net[n] = net;
     read_and_network (n + 1);
   }
 }
