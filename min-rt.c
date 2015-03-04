@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "runtime.h"
-#define D(...) fprintf(stderr, __VA_ARGS__);
+
 
 typedef struct {
   float x, y, z;
@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct {
   vec_t   vec;
-  float *cnst[120]; // cnstの各要素は定数の配列(長さ4~6でオブジェクトの形による)
+  float *cnst[120]; /* cnstの各要素は定数の配列(長さ4~6でオブジェクトの形による) */
 } dvec_t;
 
 typedef struct {
@@ -59,33 +59,6 @@ typedef struct {
   float br;
 } refl_t;
 
-
-void print_vec (char *s, vec_t *v) {
-  D2("%s %f %f %f\n", s, v->x, v->y, v->z);
-}
-void print_vec_always (char *s, vec_t *v) {
-  D("%s %f %f %f\n", s, v->x, v->y, v->z);
-}
-void print_pixel(pixel_t *p) {
-  int i;
-  D2("ps");
-  for(i=0;i<5;++i){
-    print_vec("", &p->isect_ps[i]);
-  }
-  D2("sids");
-  for(i=0;i<5;++i){
-    D2("%d ", p->sids[i]);
-  }
-  D2("engy");
-  for(i=0;i<5;++i){
-     print_vec("", &p->engy[i]);
-  }
-
-  D2("r20p");
-  for(i=0;i<5;++i){
-     print_vec("", &p->r20p[i]);
-  }
-}
 
 void copy_obj(obj_t *dst, obj_t *src) {
   memcpy(dst, src, sizeof(obj_t));
@@ -103,7 +76,7 @@ void copy_pixel(pixel_t *dst, pixel_t *src) {
 }
 
 
-// global
+/* global */
 /**************** グローバル変数の宣言 ****************/
 
 /* オブジェクトの個数 */
@@ -121,7 +94,7 @@ vec_t light;
 /* 鏡面ハイライト強度 (標準=255) */
 float beam = 255.0;
 /* AND ネットワークを保持 */
-int *and_net[50]; // TODO
+int *and_net[50];
 /* OR ネットワークを保持 */
 int **or_net;
 
@@ -167,13 +140,13 @@ vec_t screenz_dir;
 vec_t ptrace_dirvec;
 
 /* 間接光サンプリングに使う方向ベクトル */
-dvec_t dirvecs[5][120];   // TODO initialize
+dvec_t dirvecs[5][120];
 
 /* 光源光の前処理済み方向ベクトル */
-dvec_t light_dirvec; // TODO initialize
+dvec_t light_dirvec;
 
 /* 鏡平面の反射情報 */
-refl_t reflections[180]; // TODO
+refl_t reflections[180];
 
 /* reflectionsの有効な要素数 */
 int n_reflections;
@@ -1198,10 +1171,9 @@ float* setup_second_table(vec_t *v, obj_t *m) {
 }
 
 
-// iteration
 /* 各オブジェクトについて補助関数を呼んでテーブルを作る */
 void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
-  if (index >= 0) {
+  while (index >= 0) {
     obj_t *m = &objects[index];
     float **dconst = d_const(dirvec);
     vec_t *v = d_vec(dirvec);
@@ -1214,7 +1186,7 @@ void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
     } else { /* second */
       dconst[index] = setup_second_table(v, m);
     }
-    iter_setup_dirvec_constants(dirvec, index-1);
+    --index;
   }
 }
 
@@ -1298,18 +1270,17 @@ bool is_outside(obj_t *m, float q0, float q1, float q2) {
   }
 }
 
-
-// iteration
 bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
-  int head = iand[ofs];
-  if (head == -1) {
-    return true;
-  } else {
+  int head;
+  while(1){
+    head = iand[ofs];
+    if (head == -1) {
+      return true;
+    }
     if (is_outside(&objects[head], q0, q1, q2)) {
       return false;
-    } else {
-      return check_all_inside(ofs+1, iand, q0, q1, q2);
     }
+    ++ofs;
   }
 }
 
@@ -1322,14 +1293,13 @@ bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
 /* 物体にぶつかる (=影にはいっている) か否かを判定する。*/
 
 /**** AND ネットワーク iand の影内かどうかの判定 ****/
-// iteration
 bool shadow_check_and_group(int iand_ofs, int *and_group) {
-  if (and_group[iand_ofs] == -1) {
-    return false;
-  } else {
+
+  while (and_group[iand_ofs] != -1) {
     int obj   = and_group[iand_ofs];
     int t0  = solver_fast(obj, &light_dirvec, &intersection_point);
     float t0p = solver_dist;
+
     if (t0 != 0 && t0p < -0.2) {
       /* Q: 交点の候補。実際にすべてのオブジェクトに */
       /* 入っているかどうかを調べる。*/
@@ -1339,75 +1309,67 @@ bool shadow_check_and_group(int iand_ofs, int *and_group) {
       float q2 = light.z * t + intersection_point.z;
       if (check_all_inside(0, and_group, q0, q1, q2)) {
         return true;
-      } else {
-        /* 次のオブジェクトから候補点を探す */
-        return shadow_check_and_group(iand_ofs + 1, and_group);
       }
     } else {
       /* 交点がない場合: 極性が正(内側が真)の場合、    */
       /* AND ネットの共通部分はその内部に含まれるため、*/
       /* 交点はないことは自明。探索を打ち切る。        */
-      if (o_isinvert(&objects[obj])) {
-        return shadow_check_and_group((iand_ofs + 1), and_group);
-      } else {
+      if (!o_isinvert(&objects[obj])) {
         return false;
       }
     }
+
+    /* 次のオブジェクトから候補点を探す */
+    ++iand_ofs;
   }
+
+  return false;
 }
 
 /**** OR グループ or_group の影かどうかの判定 ****/
-// iteration
 bool shadow_check_one_or_group(int ofs, int *or_group) {
-  int head = or_group[ofs];
-  if (head == -1) {
-    return false;
-  } else {
+  int head;
+  while((head = or_group[ofs]) != -1) {
     int *and_group = and_net[head];
     bool shadow_p = shadow_check_and_group(0, and_group);
     if (shadow_p) {
       return true;
-    } else {
-      return shadow_check_one_or_group(ofs + 1, or_group);
     }
+    ++ofs;
   }
+  return false;
 }
 
 /**** OR グループの列のどれかの影に入っているかどうかの判定 ****/
-// iteration
 bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
-  int *head = or_matrix[ofs];
-  int range_primitive = head[0];
-  if (range_primitive == -1) { /* OR行列の終了マーク */
-    return false;
-  } else {
-    /* range primitive が無いか、またはrange_primitiveと交わる事を確認 */
+
+  while(1) {
+    int *head = or_matrix[ofs];
+    int range_primitive = head[0];
     bool test = false;
+    if (range_primitive == -1) { /* OR行列の終了マーク */
+      return false;
+    }
+
+    /* range primitive が無いか、またはrange_primitiveと交わる事を確認 */
     if (range_primitive == 99) { /* range primitive が無い */
       test = true;
     } else {
       int t = solver_fast(range_primitive, &light_dirvec, &intersection_point);
       /* range primitive とぶつからなければ */
       /* or group との交点はない            */
-      if (t != 0) {
-        if (solver_dist < -0.1) {
-          if (shadow_check_one_or_group(1, head)) {
-            test = true;
-          }
-        }
-      }
+      test = (t != 0 && solver_dist < -0.1 && shadow_check_one_or_group(1, head));
     }
 
-    if (test) {
-      if (shadow_check_one_or_group(1, head)) {
-        return true; /* 交点があるので、影に入る事が判明。探索終了 */
-      } else {
-        return shadow_check_one_or_matrix(ofs + 1, or_matrix); /* 次の要素を試す */
-      }
-    } else {
-      return shadow_check_one_or_matrix(ofs + 1, or_matrix); /* 次の要素を試す */
+    if (test && shadow_check_one_or_group(1, head)) {
+      return true; /* 交点があるので、影に入る事が判明。探索終了 */
     }
+
+    ++ofs;
+
   }
+
+  return false;
 }
 
 
@@ -1417,76 +1379,66 @@ bool shadow_check_one_or_matrix(int ofs, int **or_matrix) {
 
 /**** あるANDネットワークが、レイトレースの方向に対し、****/
 /**** 交点があるかどうかを調べる。                    ****/
-// iteration
 void solve_each_element(int iand_ofs, int *and_group, vec_t *dirvec) {
-  int iobj = and_group[iand_ofs];
-  if (iobj == -1) {
-    return;
-  } else {
+  int iobj;
+  while ((iobj = and_group[iand_ofs]) != -1) {
     int t0 = solver(iobj, dirvec, &startp);
     if (t0 != 0) {
       /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
       /* 今までの中で最小の t の値と比べる。*/
       float t0p = solver_dist;
-      if (0.0 < t0p) {
-        if (t0p < tmin) {
-          float t = t0p + 0.01;
-          vec_t *v = dirvec;
-          float q0 = v->x * t + startp.x;
-          float q1 = v->y * t + startp.y;
-          float q2 = v->z * t + startp.z;
-          if (check_all_inside(0, and_group, q0, q1, q2)) {
-            tmin = t;
-            vecset(&intersection_point, q0, q1, q2);
-            intersected_object_id = iobj;
-            intsec_rectside = t0;
-          }
+      if (0.0 < t0p && t0p < tmin) {
+        float t = t0p + 0.01;
+        vec_t *v = dirvec;
+        float q0 = v->x * t + startp.x;
+        float q1 = v->y * t + startp.y;
+        float q2 = v->z * t + startp.z;
+        if (check_all_inside(0, and_group, q0, q1, q2)) {
+          tmin = t;
+          vecset(&intersection_point, q0, q1, q2);
+          intersected_object_id = iobj;
+          intsec_rectside = t0;
         }
       }
-      solve_each_element(iand_ofs + 1, and_group, dirvec);
     } else {
       /* 交点がなく、しかもその物体は内側が真ならこれ以上交点はない */
-      if (o_isinvert(&objects[iobj])) {
-        solve_each_element(iand_ofs + 1, and_group, dirvec);
+      if (!o_isinvert(&objects[iobj])) {
+        return;
       }
     }
+    ++iand_ofs;
   }
 }
 
 
 /**** 1つの OR-group について交点を調べる ****/
-// iteraion
 void solve_one_or_network(int ofs, int *or_group, vec_t *dirvec) {
-  int head = or_group[ofs];
-  if (head != -1) {
+  int head;
+  while ((head = or_group[ofs]) != -1) {
     int *and_group = and_net[head];
     solve_each_element(0, and_group, dirvec);
-    solve_one_or_network(ofs + 1, or_group, dirvec);
+    ++ofs;
   }
 }
 
 
 /**** ORマトリクス全体について交点を調べる。****/
-// iteration
 void trace_or_matrix(int ofs, int **or_network, vec_t *dirvec) {
-  int *head = or_network[ofs];
-  int range_primitive = head[0];
-  if (range_primitive == -1) { /* 全オブジェクト終了 */
-    return;
-  } else {
+  while (1) { /* 全オブジェクト終了 */
+    int *head = or_network[ofs++];
+    int range_primitive = head[0];
+    if (range_primitive == -1) {
+      return;
+    }
     if (range_primitive == 99) { /* range primitive なし */
       solve_one_or_network(1, head, dirvec);
     } else {
       /* range primitive の衝突しなければ交点はない */
       float t = solver(range_primitive, dirvec, &startp);
-      if (t != 0) {
-        float tp = solver_dist;
-        if (tp < tmin) {
-          solve_one_or_network(1, head, dirvec);
-        }
+      if (t != 0 && solver_dist < tmin) {
+        solve_one_or_network(1, head, dirvec);
       }
     }
-    trace_or_matrix(ofs + 1, or_network, dirvec);
   }
 }
 
@@ -1509,73 +1461,59 @@ bool judge_intersection(vec_t *dirvec) {
    光線と物体の交差判定 高速版
 *****************************************************************************/
 
-// iteration
 void solve_each_element_fast(int iand_ofs, int *and_group, dvec_t *dirvec) {
   vec_t *vec = d_vec(dirvec);
-  int iobj = and_group[iand_ofs];
-  if (iobj == -1) {
-    return;
-  } else {
+  int iobj;
+  while ((iobj = and_group[iand_ofs++]) != -1) {
     int t0 = solver_fast2(iobj, dirvec);
     if (t0 != 0) {
       /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
       /* 今までの中で最小の t の値と比べる。*/
-      float t0p = solver_dist;
-      if (0.0 < t0p) {
-        if (t0p < tmin) {
-          float t  = t0p + 0.01;
-          float q0 = vec->x * t + startp_fast.x;
-          float q1 = vec->y * t + startp_fast.y;
-          float q2 = vec->z * t + startp_fast.z;
-          if (check_all_inside(0, and_group, q0, q1, q2)) {
-            tmin = t;
-            vecset(&intersection_point, q0, q1, q2);
-            intersected_object_id = iobj;
-            intsec_rectside = t0;
-          }
+      if (0.0 < solver_dist && solver_dist < tmin) {
+        float t  = solver_dist + 0.01;
+        float q0 = vec->x * t + startp_fast.x;
+        float q1 = vec->y * t + startp_fast.y;
+        float q2 = vec->z * t + startp_fast.z;
+        if (check_all_inside(0, and_group, q0, q1, q2)) {
+          tmin = t;
+          vecset(&intersection_point, q0, q1, q2);
+          intersected_object_id = iobj;
+          intsec_rectside = t0;
         }
       }
-      solve_each_element_fast(iand_ofs + 1, and_group, dirvec);
-    } else {
+    } else if (!o_isinvert(&objects[iobj])) {
       /* 交点がなく、しかもその物体は内側が真ならこれ以上交点はない */
-      if (o_isinvert(&objects[iobj])) {
-        solve_each_element_fast(iand_ofs + 1, and_group, dirvec);
-      }
+      return;
     }
   }
 }
 
 /**** 1つの OR-group について交点を調べる ****/
-// iteration
 void solve_one_or_network_fast(int ofs, int *or_group, dvec_t *dirvec) {
-  int head = or_group[ofs];
-  if (head != -1) {
+  int head;
+  while ((head = or_group[ofs++]) != -1) {
     int *and_group = and_net[head];
     solve_each_element_fast(0, and_group, dirvec);
-    solve_one_or_network_fast(ofs+1, or_group, dirvec);
   }
 }
 
 /**** ORマトリクス全体について交点を調べる。****/
 void trace_or_matrix_fast(int ofs, int **or_network, dvec_t *dirvec) {
-  int *head = or_network[ofs];
-  int range_primitive = head[0];
-  if (range_primitive == -1) { /* 全オブジェクト終了 */
-    return;
-  } else {
+  while (1) {
+    int *head = or_network[ofs++];
+    int range_primitive = head[0];
+    if (range_primitive == -1) { /* 全オブジェクト終了 */
+      return;
+    }
     if (range_primitive == 99) { /* range primitive なし */
       solve_one_or_network_fast(1, head, dirvec);
     } else {
       /* range primitive の衝突しなければ交点はない */
       float t = solver_fast2(range_primitive, dirvec);
-      if (t != 0) {
-        float tp = solver_dist;
-        if (tp < tmin) {
-          solve_one_or_network_fast(1, head, dirvec);
-        }
+      if (t != 0 && solver_dist < tmin) {
+        solve_one_or_network_fast(1, head, dirvec);
       }
     }
-    trace_or_matrix_fast(ofs + 1, or_network, dirvec);
   }
 }
 
@@ -1754,10 +1692,9 @@ void add_light(float bright, float hilight, float hilight_scale) {
 
 
 /* 各物体による光源の反射光を計算する関数(直方体と平面のみ) */
-// iteration
 void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dirvec) {
-  if (index >= 0) {
-    refl_t *rinfo = &reflections[index]; /* 鏡平面の反射情報 */
+  while (index >= 0) {
+    refl_t *rinfo = &reflections[index--]; /* 鏡平面の反射情報 */
     dvec_t *dvec  = r_dvec(rinfo);       /* 反射光の方向ベクトル(光と逆向き */
 
     /*反射光を逆にたどり、実際にその鏡面に当たれば、反射光が届く可能性有り */
@@ -1775,14 +1712,13 @@ void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dir
         }
       }
     }
-    trace_reflections(index - 1, diffuse, hilight_scale, dirvec);
   }
 }
 
 /******************************************************************************
    直接光を追跡する
 *****************************************************************************/
-// iteration
+// iteration TODO
 void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist) {
   if (nref <= 4) {
     int *surface_ids = p_surface_ids(pixel);
@@ -1893,9 +1829,8 @@ void trace_diffuse_ray(dvec_t *dirvec, float energy) {
 
 /* あらかじめ決められた方向ベクトルの配列に対し、各ベクトルの方角から来る
    間接光の強さをサンプリングして加算する */
-// iteration
 void iter_trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org, int index) {
-  if (index >= 0) {
+  while (index >= 0) {
     float p = veciprod(d_vec(&dirvec_group[index]), nvector);
 
     /* 配列の 2n 番目と 2n+1 番目には互いに逆向の方向ベクトルが入っている
@@ -1905,7 +1840,7 @@ void iter_trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org, i
     } else {
       trace_diffuse_ray(&dirvec_group[index],   p /  150.0);
     }
-    iter_trace_diffuse_rays(dirvec_group, nvector, org, (index - 2));
+    index -= 2;
   }
 }
 
@@ -1970,18 +1905,18 @@ void calc_diffuse_using_5points(int x, pixel_t *prev, pixel_t *cur, pixel_t *nex
 }
 
 /* 上下左右4点を使わずに直接光の各衝突点における間接受光を計算する */
-// iteration
 void do_without_neighbors(pixel_t *pixel, int nref) {
-  if (nref <= 4) {
+  while (nref <= 4) {
     /* 衝突面番号が有効(非負)かチェック */
-    int *surface_ids = p_surface_ids(pixel);
-    if (surface_ids[nref] >= 0) {
-      int *calc_diffuse = p_calc_diffuse(pixel);
-      if (calc_diffuse[nref]) {
-        calc_diffuse_using_1point(pixel, nref);
-      }
-      do_without_neighbors(pixel, nref+1);
+    int *surface_ids = p_surface_ids(pixel), *calc_diffuse;
+    if (surface_ids[nref] < 0) {
+      return;
     }
+    calc_diffuse = p_calc_diffuse(pixel);
+    if (calc_diffuse[nref]) {
+      calc_diffuse_using_1point(pixel, nref);
+    }
+    ++nref;
   }
 }
 
@@ -2019,28 +1954,31 @@ bool neighbors_are_available(int x, pixel_t *prev, pixel_t *cur, pixel_t *next, 
 /* 直接光の各衝突点における間接受光の強さを、上下左右4点の結果を使用して計算
    する。もし上下左右4点の計算結果を使えない場合は、その時点で
    do_without_neighborsに切り替える */
-// iteration
 void try_exploit_neighbors(int x, int y, pixel_t *prev, pixel_t *cur, pixel_t *next, int nref) {
   pixel_t *pixel = &cur[x];
-  if (nref <= 4) {
+  while (nref <= 4) {
+    int *calc_diffuse;
     /* 衝突面番号が有効(非負)か */
-    if (get_surface_id(pixel, nref) >= 0) {
-      /* 周囲4点を補完に使えるか */
-      if (neighbors_are_available(x, prev, cur, next, nref)) {
-        /* 間接受光を計算するフラグが立っていれば実際に計算する */
-        int *calc_diffuse = p_calc_diffuse(pixel);
-        if (calc_diffuse[nref]) {
-          calc_diffuse_using_5points(x, prev, cur, next, nref);
-        }
-        /* 次の反射衝突点へ */
-        try_exploit_neighbors(x, y, prev, cur, next, nref + 1);
-      } else {
-        /* 周囲4点を補完に使えないので、これらを使わない方法に切り替える */
-        do_without_neighbors(&cur[x], nref);
-      }
+    if (get_surface_id(pixel, nref) < 0) {
+      return;
     }
 
+    /* 周囲4点を補完に使えるか */
+    if (!neighbors_are_available(x, prev, cur, next, nref)) {
+      /* 周囲4点を補完に使えないので、これらを使わない方法に切り替える */
+        do_without_neighbors(&cur[x], nref);
+        return;
+    }
+
+    /* 間接受光を計算するフラグが立っていれば実際に計算する */
+    calc_diffuse = p_calc_diffuse(pixel);
+    if (calc_diffuse[nref]) {
+      calc_diffuse_using_5points(x, prev, cur, next, nref);
+    }
+    /* 次の反射衝突点へ */
+    ++nref;
   }
+
 }
 
 
@@ -2088,40 +2026,33 @@ void write_rgb () {
    行わないと最終的なピクセルの値を計算できない */
 
 /* 間接光を 60本(20%)だけ計算しておく関数 */
-// iteration
 void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
-  if (nref <= 4) {
-    /* 面番号が有効か */
-    int sid = get_surface_id(pixel, nref);
-    if (sid >= 0) {
-      /* 間接光を計算するフラグが立っているか */
-      int *calc_diffuse = p_calc_diffuse(pixel);
-      if (calc_diffuse[nref]) {
-        int group_id = p_group_id(pixel);
-        vec_t *nvectors;
-        vec_t *intersection_points;
-        vec_t *ray20p;
-        vecbzero(&diffuse_ray);
+  while (nref <= 4 && get_surface_id(pixel, nref) >= 0) {
+    /* 間接光を計算するフラグが立っているか */
+    int *calc_diffuse = p_calc_diffuse(pixel);
+    if (calc_diffuse[nref]) {
+      int group_id = p_group_id(pixel);
+      vec_t *nvectors;
+      vec_t *intersection_points;
+      vec_t *ray20p;
+      vecbzero(&diffuse_ray);
 
-        /* 5つの方向ベクトル集合(各60本)から自分のグループIDに対応する物を
-           一つ選んで追跡 */
-        nvectors = p_nvectors(pixel);
-        intersection_points = p_intersection_points(pixel);
-        trace_diffuse_rays(dirvecs[group_id],
-                           &nvectors[nref],
-                           &intersection_points[nref]);
-        ray20p = p_received_ray_20percent(pixel);
-        ray20p[nref] = diffuse_ray;
-      }
-      pretrace_diffuse_rays(pixel, nref+1);
+      /* 5つの方向ベクトル集合(各60本)から自分のグループIDに対応する物を
+         一つ選んで追跡 */
+      nvectors = p_nvectors(pixel);
+      intersection_points = p_intersection_points(pixel);
+      trace_diffuse_rays(dirvecs[group_id],
+                         &nvectors[nref],
+                         &intersection_points[nref]);
+      ray20p = p_received_ray_20percent(pixel);
+      ray20p[nref] = diffuse_ray;
     }
-
+    ++nref;
   }
 }
 
 
 /* 各ピクセルに対して直接光追跡と間接受光の20%分の計算を行う */
-// iteration
 void pretrace_pixels(pixel_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
   while (x >= 0) {
     float xdisp = scan_pitch * float_of_int(x - image_center[0]);
@@ -2160,37 +2091,35 @@ void pretrace_line(pixel_t *line, int y, int group_id) {
    直接光追跡と間接光20%追跡の結果から最終的なピクセル値を計算する関数
 *****************************************************************************/
 
-/* 各ピクセルの最終的なピクセル値を計算 */
-// iteration
-void scan_pixel(int x, int y, pixel_t *prev, pixel_t *cur, pixel_t *next) {
-  if (x < image_size[0]) {
-    /* まず、直接光追跡で得られたRGB値を得る */
-    rgb = *p_rgb(&cur[x]);
+/* ピクセル値を計算 */
+void scan_lines(pixel_t *prev, pixel_t *cur, pixel_t *next, int group_id) {
+  int y, x;
+  pixel_t *t;
+  for (y = 0; y < image_size[1]; ++y) {
 
-    /* 次に、直接光の各衝突点について、間接受光による寄与を加味する */
-    if (neighbors_exist(x, y, next)) {
-      try_exploit_neighbors(x, y, prev, cur, next, 0);
-    } else {
-      do_without_neighbors(&cur[x], 0);
-    }
-
-
-    /* 得られた値をPPMファイルに出力 */
-    write_rgb();
-
-    scan_pixel(x + 1, y, prev, cur, next);
-  }
-}
-
-/* 一ライン分のピクセル値を計算 */
-// iteration
-void scan_line(int y, pixel_t *prev, pixel_t *cur, pixel_t *next, int group_id) {
-  if (y < image_size[1]) {
     if (y < image_size[1] - 1) {
       pretrace_line(next, y + 1, group_id);
     }
-    scan_pixel(0, y, prev, cur, next);
-    scan_line(y + 1, cur, next, prev, add_mod5(group_id, 2));
+
+    for (x = 0; x < image_size[0]; ++x) {
+      /* まず、直接光追跡で得られたRGB値を得る */
+      rgb = *p_rgb(&cur[x]);
+
+      /* 次に、直接光の各衝突点について、間接受光による寄与を加味する */
+      if (neighbors_exist(x, y, next)) {
+        try_exploit_neighbors(x, y, prev, cur, next, 0);
+      } else {
+        do_without_neighbors(&cur[x], 0);
+      }
+
+      /* 得られた値をPPMファイルに出力 */
+      write_rgb();
+    }
+    t = prev;
+    prev = cur;
+    cur  = next;
+    next = t;
+    group_id = add_mod5(group_id, 2);
   }
 }
 
@@ -2239,32 +2168,34 @@ float adjust_position(float h, float ratio) {
 }
 
 /* ベクトル達が出来るだけ球面状に一様に分布するような向きを計算する */
-// iteration
 void calc_dirvec(int icount, float x, float y, float rx, float ry, int group_id, int index) {
-  if (icount >= 5) {
-    float l  = sqrt(fsqr(x) + fsqr(y) + 1.0);
-    float vx = x   / l;
-    float vy = y   / l;
-    float vz = 1.0 / l;
+  float l, vx, vy, vz;
+  dvec_t *dgroup;
 
-    /* 立方体的に対称に分布させる */
-    dvec_t *dgroup = dirvecs[group_id];
-    vecset(d_vec(&dgroup[index]),    vx, vy, vz);
-    vecset(d_vec(&dgroup[index+40]), vx, vz, fneg(vy));
-    vecset(d_vec(&dgroup[index+80]), vz, fneg(vx), fneg(vy));
-    vecset(d_vec(&dgroup[index+1]),  fneg(vx), fneg(vy), fneg(vz));
-    vecset(d_vec(&dgroup[index+41]), fneg(vx), fneg(vz), vy);
-    vecset(d_vec(&dgroup[index+81]), fneg(vz), vx, vy);
-  } else {
-    float x2 = adjust_position(y, rx);
-    calc_dirvec(icount + 1, x2, adjust_position(x2, ry), rx, ry, group_id, index);
+  for(; icount < 5; ++icount) {
+    x = adjust_position(y, rx);
+    y = adjust_position(x, ry);
   }
+
+  l  = sqrt(fsqr(x) + fsqr(y) + 1.0);
+  vx = x   / l;
+  vy = y   / l;
+  vz = 1.0 / l;
+
+  /* 立方体的に対称に分布させる */
+  dgroup = dirvecs[group_id];
+  vecset(d_vec(&dgroup[index]),    vx, vy, vz);
+  vecset(d_vec(&dgroup[index+40]), vx, vz, fneg(vy));
+  vecset(d_vec(&dgroup[index+80]), vz, fneg(vx), fneg(vy));
+  vecset(d_vec(&dgroup[index+1]),  fneg(vx), fneg(vy), fneg(vz));
+  vecset(d_vec(&dgroup[index+41]), fneg(vx), fneg(vz), vy);
+  vecset(d_vec(&dgroup[index+81]), fneg(vz), vx, vy);
+
 }
 
 /* 立方体上の 10x10格子の行中の各ベクトルを計算する */
-// iteration
 void calc_dirvecs(int col, float ry, int group_id, int index) {
-  if (col >= 0) {
+  while (col >= 0) {
     float rx, rx2;
     /* 左半分 */
     rx = float_of_int(col) * 0.2 - 0.9; /* 列の座標 */
@@ -2273,17 +2204,19 @@ void calc_dirvecs(int col, float ry, int group_id, int index) {
     rx2 = float_of_int(col) * 0.2 + 0.1;  /* 列の座標 */
     calc_dirvec(0, 0.0, 0.0, rx2, ry, group_id, (index + 2));
 
-    calc_dirvecs(col - 1, ry, add_mod5(group_id, 1), index);
+    --col;
+    group_id = add_mod5(group_id, 1);
   }
 }
 
 /* 立方体上の10x10格子の各行に対しベクトルの向きを計算する */
-// iteration
 void calc_dirvec_rows(int row, int group_id, int index) {
-  if (row >= 0) {
+  while (row >= 0) {
     float ry = float_of_int(row) * 0.2 - 0.9; /* 行の座標 */
     calc_dirvecs(4, ry, group_id, index); /* 一行分計算 */
-    calc_dirvec_rows(row - 1, add_mod5(group_id, 2), index + 4);
+    --row;
+    group_id = add_mod5(group_id, 2);
+    index += 4;
   }
 }
 
@@ -2299,7 +2232,6 @@ void init_dirvec_constants(dvec_t vecset[], int index) {
   }
 }
 
-// iteration
 void init_vecset_constants(int index) {
   while (index >= 0) {
     init_dirvec_constants(dirvecs[index], 119);
@@ -2393,7 +2325,7 @@ void rt (int size_x, int size_y) {
   setup_dirvec_constants(&light_dirvec);
   setup_reflections(n_objects - 1);
   pretrace_line(cur, 0, 0);
-  scan_line(0, prev, cur, next, 2);
+  scan_lines(prev, cur, next, 2);
 }
 
 
