@@ -195,16 +195,16 @@ float sgn (float x) {
 *****************************************************************************/
 
 /* 値代入 */
-#define vecset(v, a, b, c) \
-  do {                     \
-    (v)->x = a;              \
-    (v)->y = b;              \
-    (v)->z = c;              \
+#define vecset(v, a, b, c)                      \
+  do {                                          \
+    (v)->x = a;                                 \
+    (v)->y = b;                                 \
+    (v)->z = c;                                 \
   } while(0)
 
 
 /* 零初期化 */
-#define vecbzero(v) \
+#define vecbzero(v)                             \
   ((v)->x = (v)->y = (v)->z = 0.0)
 
 
@@ -225,15 +225,15 @@ void vecunit_sgn (vec_t *v, int inv) {
 }
 
 /* 内積 */
-#define veciprod(v, w)                           \
+#define veciprod(v, w)                                  \
   ((v)->x * (w)->x + (v)->y * (w)->y + (v)->z * (w)->z)
 
 /* 内積 */
-#define veciprod_d(v, w)                                      \
+#define veciprod_d(v, w)                                            \
   ((v)->vec.x * (w)->x + (v)->vec.y * (w)->y + (v)->vec.z * (w)->z)
 
 /* 内積 引数形式が異なる版 */
-#define veciprod2(v, w0, w1, w2)                \
+#define veciprod2(v, w0, w1, w2)                  \
   ((v)->x * (w0) + (v)->y * (w1) + (v)->z * (w2))
 
 
@@ -256,20 +256,20 @@ void vecunit_sgn (vec_t *v, int inv) {
 
 
 /* ベクトルを定数倍 */
-#define vecscale(dest, scale)\
-  do {                                               \
-    (dest)->x *= (scale);                            \
-    (dest)->y *= (scale);                            \
-    (dest)->z *= (scale);                            \
+#define vecscale(dest, scale)                   \
+  do {                                          \
+    (dest)->x *= (scale);                       \
+    (dest)->y *= (scale);                       \
+    (dest)->z *= (scale);                       \
   } while(0)
 
 /* 他の２ベクトルの要素同士の積を計算し加算 */
-#define vecaccumv(dest, v, w)                         \
-  do {                                                \
-      (dest)->x += (v)->x * (w)->x;                   \
-      (dest)->y += (v)->y * (w)->y;                   \
-      (dest)->z += (v)->z * (w)->z;                   \
-  } while(0)
+#define vecaccumv(dest, v, w)                   \
+  do {                                          \
+      (dest)->x += (v)->x * (w)->x;             \
+      (dest)->y += (v)->y * (w)->y;             \
+      (dest)->z += (v)->z * (w)->z;             \
+      } while(0)
 
 /******************************************************************************
    オブジェクトデータ構造へのアクセス関数
@@ -592,8 +592,6 @@ bool read_nth_object(int n) {
 
       objects[n].ctbl = ctbl;
     }
-
-
 
     return true;
   } else {
