@@ -60,22 +60,6 @@ typedef struct {
 } refl_t;
 
 
-void copy_obj(obj_t *dst, obj_t *src) {
-  memcpy(dst, src, sizeof(obj_t));
-}
-
-void copy_vec(vec_t *dst, vec_t *src) {
-  memcpy(dst, src, sizeof(vec_t));
-}
-void copy_vec4(vec4_t *dst, vec4_t *src) {
-  memcpy(dst, src, sizeof(vec4_t));
-}
-
-void copy_pixel(pixel_t *dst, pixel_t *src) {
-  memcpy(dst, src, sizeof(pixel_t));
-}
-
-
 /* global */
 /**************** グローバル変数の宣言 ****************/
 
@@ -167,52 +151,26 @@ float sgn (float x) {
 }
 
 /* 条件付き符号反転 */
-float fneg_cond (int cond, float x) {
-  return cond ? x : fneg(x);
-}
+#define fneg_cond(cond, x) ((cond) ? (x) : fneg(x))
 
-/* (x+y) mod 5 */
-int add_mod5 (int x, int y) {
-  int sum = x + y;
-  return sum >= 5 ? sum - 5 : sum;
-}
 
 /******************************************************************************
    ベクトル操作のためのプリミティブ
 *****************************************************************************/
 
 /* 値代入 */
-void vecset (vec_t *v, float x, float y, float z) {
-  v->x = x;
-  v->y = y;
-  v->z = z;
-}
+#define vecset(v, a, b, c) \
+  do {                     \
+    (v)->x = a;              \
+    (v)->y = b;              \
+    (v)->z = c;              \
+  } while(0)
 
-/* 同じ値で埋める */
-void vecfill (vec_t *v, float elem) {
-  v->x = elem;
-  v->y = elem;
-  v->z = elem;
-}
 
 /* 零初期化 */
-void vecbzero (vec_t *v) {
-  vecfill(v, 0.0);
-}
+#define vecbzero(v) \
+  ((v)->x = (v)->y = (v)->z = 0.0)
 
-
-/* 距離の自乗 */
-float vecdist2 (vec_t *p, vec_t *q) {
-  return fsqr (p->x - q->x) + fsqr (p->y - q->y) + fsqr (p->z - q->z);
-}
-
-/* 正規化 ゼロ割りチェック無し */
-void vecunit (vec_t *v) {
-  float il = 1.0 / sqrt(fsqr(v->x) + fsqr(v->y) + fsqr(v->z));
-  v->x = v->x * il;
-  v->y = v->y * il;
-  v->z = v->z * il;
-}
 
 /* 符号付正規化 ゼロ割チェック*/
 void vecunit_sgn (vec_t *v, int inv) {
@@ -231,160 +189,113 @@ void vecunit_sgn (vec_t *v, int inv) {
 }
 
 /* 内積 */
-float veciprod (vec_t *v, vec_t *w) {
-  return v->x * w->x + v->y * w->y + v->z * w->z;
-}
+#define veciprod(v, w)                           \
+  ((v)->x * (w)->x + (v)->y * (w)->y + (v)->z * (w)->z)
 
 /* 内積 */
-float veciprod_d (dvec_t *v, vec_t *w) {
-  return v->vec.x * w->x + v->vec.y * w->y + v->vec.z * w->z;
-}
+#define veciprod_d(v, w)                                      \
+  ((v)->vec.x * (w)->x + (v)->vec.y * (w)->y + (v)->vec.z * (w)->z)
 
 /* 内積 引数形式が異なる版 */
-float veciprod2 (vec_t *v, float w0, float w1, float w2) {
-  return v->x * w0 + v->y * w1 + v->z * w2;
-}
+#define veciprod2(v, w0, w1, w2)                \
+  ((v)->x * (w0) + (v)->y * (w1) + (v)->z * (w2))
+
 
 /* 別なベクトルの定数倍を加算 */
-void vecaccum (vec_t *dest, float scale, vec_t *v) {
-  dest->x += scale * v->x;
-  dest->y += scale * v->y;
-  dest->z += scale * v->z;
-}
+#define vecaccum(dest, scale, v)                \
+  do {                                          \
+    (dest)->x += (scale) * (v)->x;              \
+    (dest)->y += (scale) * (v)->y;              \
+    (dest)->z += (scale) * (v)->z;              \
+  } while(0)
 
 /* ベクトルの和 */
-void vecadd (vec_t *dest, vec_t *v) {
-  dest->x += v->x;
-  dest->y += v->y;
-  dest->z += v->z;
-}
+#define vecadd(dest, v)                         \
+  do {                                          \
+    (dest)->x += (v)->x;                        \
+    (dest)->y += (v)->y;                        \
+    (dest)->z += (v)->z;                        \
+  } while(0)
 
-/* ベクトル要素同士の積 */
-void vecmul (vec_t *dest, vec_t *v) {
-  dest->x *= v->x;
-  dest->y *= v->y;
-  dest->z *= v->z;
-}
+
 
 /* ベクトルを定数倍 */
-void vecscale (vec_t *dest, float scale) {
-  dest->x *= scale;
-  dest->y *= scale;
-  dest->z *= scale;
-}
+#define vecscale(dest, scale)\
+  do {                                               \
+    (dest)->x *= (scale);                            \
+    (dest)->y *= (scale);                            \
+    (dest)->z *= (scale);                            \
+  } while(0)
 
 /* 他の２ベクトルの要素同士の積を計算し加算 */
-void vecaccumv (vec_t *dest, vec_t *v,  vec_t *w) {
-  dest->x += v->x * w->x;
-  dest->y += v->y * w->y;
-  dest->z += v->z * w->z;
-}
+#define vecaccumv(dest, v, w)                         \
+  do {                                                \
+      (dest)->x += (v)->x * (w)->x;                   \
+      (dest)->y += (v)->y * (w)->y;                   \
+      (dest)->z += (v)->z * (w)->z;                   \
+  } while(0)
 
 /******************************************************************************
    オブジェクトデータ構造へのアクセス関数
 *****************************************************************************/
 
 /* テクスチャ種 0:無し 1:市松模様 2:縞模様 3:同心円模様 4:斑点*/
-int o_texturetype (obj_t *m) {
-  return m->tex;
-}
+#define o_texturetype(m) ((m)->tex)
 
 /* 物体の形状 0:直方体 1:平面 2:二次曲面 3:円錐 */
-int o_form (obj_t *m) {
-  return m->shape;
-}
-
-
+#define o_form(m) ((m)->shape)
 
 /* 反射特性 0:拡散反射のみ 1:拡散＋非完全鏡面反射 2:拡散＋完全鏡面反射 */
-int o_reflectiontype (obj_t *m) {
-  return m->surface;
-}
+#define o_reflectiontype(m) ((m)->surface)
 
 /* 曲面の外側が真かどうかのフラグ true:外側が真 false:内側が真 */
-bool o_isinvert (obj_t *m) {
-  return m->invert;
-}
+#define o_isinvert(m) ((m)->invert)
 
 /* 回転の有無 true:回転あり false:回転無し 2次曲面と円錐のみ有効 */
-bool o_isrot (obj_t *m) {
-  return m->isrot;
-}
+#define o_isrot(m) ((m)->isrot)
 
 /* 物体形状の aパラメータ */
-float o_param_a (obj_t *m) {
-  return m->abc.x;
-}
-
+#define o_param_a(m) ((m)->abc.x)
 /* 物体形状の bパラメータ */
-float o_param_b (obj_t *m) {
-  return m->abc.y;
-}
-
+#define o_param_b(m) ((m)->abc.y)
 /* 物体形状の cパラメータ */
-float o_param_c (obj_t *m) {
-  return m->abc.z;
-}
+#define o_param_c(m) ((m)->abc.z)
+
 
 /* 物体形状の abcパラメータ */
-vec_t* o_param_abc (obj_t *m) {
-  return &m->abc;
-}
+#define o_param_abc(m) (&(m)->abc)
+
 
 /* 物体の中心x座標 */
-float o_param_x (obj_t *m) {
-  return m->xyz.x;
-}
-
+#define o_param_x(m) ((m)->xyz.x)
 /* 物体の中心y座標 */
-float o_param_y (obj_t *m) {
-  return m->xyz.y;
-}
-
+#define o_param_y(m) ((m)->xyz.y)
 /* 物体の中心z座標 */
-float o_param_z (obj_t *m) {
-  return m->xyz.z;
-}
+#define o_param_z(m) ((m)->xyz.z)
+
 
 /* 物体の拡散反射率 0.0 -- 1.0 */
-float o_diffuse (obj_t *m) {
-  return m->surfparams[0];
-}
+#define o_diffuse(m) ((m)->surfparams[0])
 
 /* 物体の不完全鏡面反射率 0.0 -- 1.0 */
-float o_hilight (obj_t *m) {
-  return m->surfparams[1];
-}
+#define o_hilight(m) ((m)->surfparams[1])
 
 /* 物体色の R成分 */
-float o_color_red (obj_t *m) {
-  return m->color.x;
-}
-
+#define o_color_red(m)   ((m)->color.x)
 /* 物体色の G成分 */
-float o_color_green (obj_t *m) {
-  return m->color.y;
-}
-
+#define o_color_green(m) ((m)->color.y)
 /* 物体色の B成分 */
-float o_color_blue (obj_t *m) {
-  return m->color.z;
-}
+#define o_color_blue(m)  ((m)->color.z)
+
 
 /* 物体の曲面方程式の y*z項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r1 (obj_t *m) {
-  return m->rot123.x;
-}
+#define o_param_r1(m) ((m)->rot123.x)
 
 /* 物体の曲面方程式の x*z項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r2 (obj_t *m) {
-  return m->rot123.y;
-}
+#define o_param_r2(m) ((m)->rot123.y)
 
 /* 物体の曲面方程式の x*y項の係数 2次曲面と円錐で、回転がある場合のみ */
-float o_param_r3 (obj_t *m) {
-  return m->rot123.z;
-}
+#define o_param_r3(m) ((m)->rot123.z)
 
 /* 光線の発射点をあらかじめ計算した場合の定数テーブル */
 /*
@@ -394,44 +305,30 @@ float o_param_r3 (obj_t *m) {
   平面→ abcベクトルとの内積
   二次曲面、円錐→二次方程式の定数項
 */
-vec4_t *o_param_ctbl (obj_t *m) {
-  return &m->ctbl;
-}
+#define o_param_ctbl(m) (&(m)->ctbl)
 
 /******************************************************************************
    Pixelデータのメンバアクセス関数群
 *****************************************************************************/
 
 /* 直接光追跡で得られたピクセルのRGB値 */
-vec_t *p_rgb (pixel_t *pixel) {
-  return &pixel->rgb;
-}
+#define p_rgb(p) (&(p)->rgb)
 
 /* 飛ばした光が物体と衝突した点の配列 */
-vec_t *p_intersection_points (pixel_t *pixel) {
-  return pixel->isect_ps;
-}
+#define p_intersection_points(p) ((p)->isect_ps)
 
 /* 飛ばした光が衝突した物体面番号の配列 */
 /* 物体面番号は オブジェクト番号 * 4 + (solverの返り値) */
-int *p_surface_ids (pixel_t *pixel) {
-  return pixel->sids;
-}
+#define p_surface_ids(p) ((p)->sids)
 
 /* 間接受光を計算するか否かのフラグ */
-int *p_calc_diffuse (pixel_t *pixel) {
-  return pixel->cdif;
-}
+#define p_calc_diffuse(p) ((p)->cdif)
 
 /* 衝突点の間接受光エネルギーがピクセル輝度に与える寄与の大きさ */
-vec_t *p_energy (pixel_t *pixel) {
-  return pixel->engy;
-}
+#define p_energy(p) ((p)->engy)
 
 /* 衝突点の間接受光エネルギーを光線本数を1/5に間引きして計算した値 */
-vec_t *p_received_ray_20percent (pixel_t *pixel) {
-  return pixel->r20p;
-}
+#define p_received_ray_20percent(p) ((p)->r20p)
 
 /* このピクセルのグループ ID */
 /*
@@ -443,52 +340,36 @@ vec_t *p_received_ray_20percent (pixel_t *pixel) {
   1 2 3 4 0 1 2 3 4 0
 */
 
-int p_group_id (pixel_t *pixel) {
-  return pixel->gid;
-}
+#define p_group_id(p) ((p)->gid)
 
 /* グループIDをセットするアクセス関数 */
-void p_set_group_id (pixel_t *pixel, int id) {
-  pixel->gid = id;
-}
+#define p_set_group_id(p, id) ((p)->gid = (id))
 
 /* 各衝突点における法線ベクトル */
-vec_t *p_nvectors (pixel_t *pixel) {
-  return pixel->nvectors;
-}
+#define p_nvectors(p) ((p)->nvectors)
 
 /******************************************************************************
    前処理済み方向ベクトルのメンバアクセス関数
 *****************************************************************************/
 
 /* ベクトル */
-vec_t* d_vec (dvec_t *d) {
-  return &(d->vec);
-}
+#define d_vec(d) (&(d)->vec)
 
 /* 各オブジェクトに対して作った solver 高速化用定数テーブル */
-float** d_const (dvec_t *d) {
-  return d->cnst;
-}
+#define d_const(d) ((d)->cnst)
 
 /******************************************************************************
    平面鏡面体の反射情報
 *****************************************************************************/
 
 /* 面番号 オブジェクト番号*4 + (solverの返り値) */
-int r_surface_id (refl_t *r) {
-  return r->sid;
-}
+#define r_surface_id(r) ((r)->sid)
 
 /* 光源光の反射方向ベクトル(光と逆向き) */
-dvec_t* r_dvec (refl_t *r) {
-  return &(r->dv);
-}
+#define r_dvec(r)  &((r)->dv)
 
 /* 物体の反射率 */
-float r_bright (refl_t *r) {
-  return r->br;
-}
+#define r_bright(r) ((r)->br)
 
 /******************************************************************************
    データ読み込みの関数群
@@ -653,6 +534,7 @@ bool read_nth_object(int n) {
       rotate_quadratic_matrix(&abc, &rotation);
     }
 
+
     {
       /* ここからあとは abc と rotation しか操作しない。*/
       objects[n].tex     = texture;
@@ -660,8 +542,8 @@ bool read_nth_object(int n) {
       objects[n].surface = refltype;
       objects[n].isrot   = isrot_p;
 
-      copy_vec(&objects[n].abc,    &abc);
-      copy_vec(&objects[n].xyz,    &xyz);
+      objects[n].abc = abc;
+      objects[n].xyz = xyz;
 
       objects[n].invert  = m_invert2;
 
@@ -669,10 +551,10 @@ bool read_nth_object(int n) {
       objects[n].surfparams[0] = reflparam[0];
       objects[n].surfparams[1] = reflparam[1];
 
-      copy_vec(&objects[n].color,  &color);
-      copy_vec(&objects[n].rot123, &rotation);
+      objects[n].color = color;
+      objects[n].rot123 = rotation;
 
-      copy_vec4(&objects[n].ctbl,  &ctbl);
+      objects[n].ctbl = ctbl;
     }
 
 
@@ -1272,16 +1154,15 @@ bool is_outside(obj_t *m, float q0, float q1, float q2) {
 
 bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
   int head;
-  while(1){
-    head = iand[ofs];
-    if (head == -1) {
-      return true;
-    }
+  while((head = iand[ofs]) != -1){
+
     if (is_outside(&objects[head], q0, q1, q2)) {
       return false;
     }
+
     ++ofs;
   }
+  return true;
 }
 
 
@@ -2119,7 +2000,10 @@ void scan_lines(pixel_t *prev, pixel_t *cur, pixel_t *next, int group_id) {
     prev = cur;
     cur  = next;
     next = t;
-    group_id = add_mod5(group_id, 2);
+    group_id += 2;
+    if(group_id >= 5) {
+      group_id -= 5;
+    }
   }
 }
 
@@ -2205,7 +2089,9 @@ void calc_dirvecs(int col, float ry, int group_id, int index) {
     calc_dirvec(0, 0.0, 0.0, rx2, ry, group_id, (index + 2));
 
     --col;
-    group_id = add_mod5(group_id, 1);
+    if(++group_id >= 5) {
+      group_id -= 5;
+    }
   }
 }
 
@@ -2215,7 +2101,10 @@ void calc_dirvec_rows(int row, int group_id, int index) {
     float ry = float_of_int(row) * 0.2 - 0.9; /* 行の座標 */
     calc_dirvecs(4, ry, group_id, index); /* 一行分計算 */
     --row;
-    group_id = add_mod5(group_id, 2);
+    group_id += 2;
+    if(group_id >= 5) {
+      group_id -= 5;
+    }
     index += 4;
   }
 }
@@ -2331,7 +2220,7 @@ void rt (int size_x, int size_y) {
 
 int main () {
 
-  rt(128, 128);
+  rt(1024, 1024);
 
   return 0;
 }
