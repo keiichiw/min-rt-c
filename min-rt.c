@@ -15,8 +15,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "runtime.h"
-
+#include <math.h>
 
 typedef struct {
   float x, y, z;
@@ -60,7 +59,6 @@ typedef struct {
 } refl_t;
 
 
-/* global */
 /**************** グローバル変数の宣言 ****************/
 
 /* オブジェクトの個数 */
@@ -134,6 +132,44 @@ refl_t reflections[180];
 
 /* reflectionsの有効な要素数 */
 int n_reflections;
+
+/******************************************************************************
+   Runtime
+*****************************************************************************/
+
+#define fneg(x)    (-(x))
+#define fispos(x)  ((x) > 0.0)
+#define fisneg(x)  ((x) < 0.0)
+#define fiszero(x) ((x) == 0.0)
+#define fhalf(x)   ((x) * 0.5)
+#define fsqr(x)    ((x) * (x))
+
+#define int_of_float(f) ((int)(f))
+#define float_of_int(i) ((float)(i))
+
+int read_int() {
+  unsigned n = 0;
+  n += getchar();
+  n += getchar() << 8;
+  n += getchar() << 16;
+  n += getchar() << 24;
+  return n;
+}
+
+float read_float() {
+  union {unsigned i; float f;} u;
+  u.i = read_int();
+  return u.f;
+}
+
+void print_char(char c) {
+  printf("%c", c);
+}
+
+void print_int(int i) {
+  printf("%d", i);
+}
+
 
 /******************************************************************************
    ユーティリティー
@@ -2220,7 +2256,7 @@ void rt (int size_x, int size_y) {
 
 int main () {
 
-  rt(1024, 1024);
+  rt(128, 128);
 
   return 0;
 }
