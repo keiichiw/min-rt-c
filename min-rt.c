@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <math.h>
 
@@ -69,30 +70,41 @@ obj_t objects[60];
 
 /* Screen の中心座標 */
 vec_t screen;
+
 /* 視点の座標 */
 vec_t viewpoint;
+
 /* 光源方向ベクトル (単位ベクトル) */
 vec_t light;
+
 /* 鏡面ハイライト強度 (標準=255) */
 float beam = 255.0;
+
 /* AND ネットワークを保持 */
 int *and_net[50];
+
 /* OR ネットワークを保持 */
 int **or_net;
 
 /* 以下、交差判定ルーチンの返り値格納用 */
 /* solver の交点 の t の値 */
 float solver_dist = 0.0;
+
 /* 交点の直方体表面での方向 */
 int intsec_rectside = 0;
+
 /* 発見した交点の最小の t */
 float tmin = 1000000000.0;
+
 /* 交点の座標 */
 vec_t intersection_point;
+
 /* 衝突したオブジェクト番号 */
 int intersected_object_id = 0;
+
 /* 法線ベクトル */
 vec_t nvector;
+
 /* 交点の色 */
 vec_t texture_color;
 
@@ -103,13 +115,16 @@ vec_t rgb;
 
 /* 画像サイズ */
 int image_size[2];
+
 /* 画像の中心 = 画像サイズの半分 */
 int image_center[2];
+
 /* 3次元上のピクセル間隔 */
 float scan_pitch;
 
 /* judge_intersectionに与える光線始点 */
 vec_t startp;
+
 /* judge_intersection_fastに与える光線始点 */
 vec_t startp_fast;
 
@@ -600,35 +615,30 @@ bool read_nth_object(int n) {
 }
 
 /**** 物体データ全体の読み込み ****/
-void read_object(int n) {
-  if (n < 60) {
-    if (read_nth_object(n)) {
-      read_object (n + 1);
-    }else {
-      n_objects = n;
+void read_all_object() {
+  int i;
+  for(i = 0; i < 60; ++i) {
+    if(!read_nth_object(i)) {
+      n_objects = i;
+      return;
     }
   }
-}
-
-void read_all_object() {
-  read_object(0);
+  assert(false); /* failwith "too many objects" */
 }
 
 /**** AND, OR ネットワークの読み込み ****/
 
 /* ネットワーク1つを読み込みベクトルにして返す */
 // int -> int array = <fun>
+// iteration
 int *read_net_item(int length) {
   int item = read_int ();
   if (item == -1) {
     int *ary = (int *) malloc(sizeof(int) * (length + 1));
-    int i;
-    for (i = 0; i < length + 1; ++i) {
-      ary[i] = -1;
-    }
+    memset(ary, -1, sizeof(int) * (length + 1));
     return ary;
   }else {
-    int *v = read_net_item (length + 1);
+    int *v = read_net_item(length + 1);
     v[length] = item;
     return v;
   }
@@ -656,7 +666,7 @@ void read_and_network (int n) {
   int *net = read_net_item(0);
   and_net[n] = net;
   if (net[0] != -1) {
-    read_and_network (n + 1);
+    read_and_network(n + 1);
   }
 }
 
