@@ -4,12 +4,13 @@
 *.out
 *.ppm
 *.annot
+*.bin
 min-rt
 origin/*.cmi
 origin/*.cmx
 origin/min-rt
-origin/sld/
 /GPATH
 /GRTAGS
 /GSYMS
 /GTAGS
+/conv
