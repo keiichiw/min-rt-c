@@ -664,8 +664,9 @@ int **read_or_network(int length) {
 
 void read_and_network (int n) {
   int *net = read_net_item(0);
-  and_net[n] = net;
   if (net[0] != -1) {
+    free(and_net[n]);
+    and_net[n] = net;
     read_and_network(n + 1);
   }
 }
@@ -2263,6 +2264,12 @@ void rt (int size_x, int size_y) {
 
 
 int main () {
+  int i;
+
+  for(i = 0; i < 50; ++i) {
+    and_net[i] = malloc(sizeof(int));
+    and_net[i][0] = -1;
+  }
 
   rt(128, 128);
 
