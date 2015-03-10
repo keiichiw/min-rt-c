@@ -535,28 +535,28 @@ bool read_nth_object(int n) {
     form = read_int();
     refltype = read_int();
     isrot_p = read_int();
-    abc.x = read_float ();
-    abc.y = read_float ();
-    abc.z = read_float ();
+    abc.x = read_float();
+    abc.y = read_float();
+    abc.z = read_float();
 
 
-    xyz.x = read_float ();
-    xyz.y = read_float ();
-    xyz.z = read_float ();
+    xyz.x = read_float();
+    xyz.y = read_float();
+    xyz.z = read_float();
 
-    m_invert = fisneg (read_float ());
+    m_invert = fisneg (read_float());
 
-    reflparam[0] = read_float (); /* diffuse */
-    reflparam[1] = read_float (); /* hilight */
+    reflparam[0] = read_float(); /* diffuse */
+    reflparam[1] = read_float(); /* hilight */
 
-    color.x = read_float ();
-    color.y = read_float ();
-    color.z = read_float (); /* 15 */
+    color.x = read_float();
+    color.y = read_float();
+    color.z = read_float(); /* 15 */
 
     if (isrot_p != 0) {
-      rotation.x = rad (read_float ());
-      rotation.y = rad (read_float ());
-      rotation.z = rad (read_float ());
+      rotation.x = rad (read_float());
+      rotation.y = rad (read_float());
+      rotation.z = rad (read_float());
     }
 
     /* パラメータの正規化 */
@@ -629,10 +629,8 @@ void read_all_object() {
 /**** AND, OR ネットワークの読み込み ****/
 
 /* ネットワーク1つを読み込みベクトルにして返す */
-// int -> int array = <fun>
-// iteration
 int *read_net_item(int length) {
-  int item = read_int ();
+  int item = read_int();
   if (item == -1) {
     int *ary = (int *) malloc(sizeof(int) * (length + 1));
     memset(ary, -1, sizeof(int) * (length + 1));
@@ -644,7 +642,6 @@ int *read_net_item(int length) {
   }
 }
 
-// int -> int array array
 int **read_or_network(int length) {
   int *net = read_net_item(0);
   if (net[0] == -1) {
@@ -674,7 +671,7 @@ void read_and_network (int n) {
 void read_parameter() {
   read_screen_settings();
   read_light();
-  read_all_object ();
+  read_all_object();
   read_and_network(0);
   or_net = read_or_network(0);
 }
@@ -1935,7 +1932,7 @@ void write_rgb_element(double x) {
 }
 
 
-void write_rgb () {
+void write_rgb() {
   write_rgb_element(rgb.x); /* Red */
   print_char(32);
   write_rgb_element(rgb.y); /* Green */
@@ -2263,7 +2260,7 @@ void rt (int size_x, int size_y) {
 }
 
 
-int main () {
+int main() {
   int i;
 
   for(i = 0; i < 50; ++i) {
