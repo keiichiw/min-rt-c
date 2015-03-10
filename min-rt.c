@@ -19,11 +19,11 @@
 #include <math.h>
 
 typedef struct {
-  float x, y, z;
+  double x, y, z;
 } vec_t;
 
 typedef struct {
-  float x, y, z, w;
+  double x, y, z, w;
 } vec4_t;
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
   bool   isrot;
   vec_t  abc, xyz;
   bool   invert;
-  float  surfparams[2];
+  double  surfparams[2];
   vec_t  color, rot123;
   vec4_t ctbl;
 } obj_t;
@@ -50,13 +50,13 @@ typedef struct {
 
 typedef struct {
   vec_t   vec;
-  float *cnst[120]; /* cnstの各要素は定数の配列(長さ4~6でオブジェクトの形による) */
+  double *cnst[120]; /* cnstの各要素は定数の配列(長さ4~6でオブジェクトの形による) */
 } dvec_t;
 
 typedef struct {
   int   sid;
   dvec_t  dv;
-  float br;
+  double br;
 } refl_t;
 
 
@@ -78,7 +78,7 @@ vec_t viewpoint;
 vec_t light;
 
 /* 鏡面ハイライト強度 (標準=255) */
-float beam = 255.0;
+double beam = 255.0;
 
 /* AND ネットワークを保持 */
 int *and_net[50];
@@ -88,13 +88,13 @@ int **or_net;
 
 /* 以下、交差判定ルーチンの返り値格納用 */
 /* solver の交点 の t の値 */
-float solver_dist = 0.0;
+double solver_dist = 0.0;
 
 /* 交点の直方体表面での方向 */
 int intsec_rectside = 0;
 
 /* 発見した交点の最小の t */
-float tmin = 1000000000.0;
+double tmin = 1000000000.0;
 
 /* 交点の座標 */
 vec_t intersection_point;
@@ -120,7 +120,7 @@ int image_size[2];
 int image_center[2];
 
 /* 3次元上のピクセル間隔 */
-float scan_pitch;
+double scan_pitch;
 
 /* judge_intersectionに与える光線始点 */
 vec_t startp;
@@ -159,8 +159,8 @@ int n_reflections;
 #define fhalf(x)   ((x) * 0.5)
 #define fsqr(x)    ((x) * (x))
 
-#define int_of_float(f) ((int)(f))
-#define float_of_int(i) ((float)(i))
+#define int_of_double(f) ((int)(f))
+#define float_of_int(i) ((double)(i))
 
 int read_int() {
   unsigned n = 0;
@@ -171,7 +171,7 @@ int read_int() {
   return n;
 }
 
-float read_float() {
+double read_float() {
   union {unsigned i; float f;} u;
   u.i = read_int();
   return u.f;
@@ -191,7 +191,7 @@ void print_int(int i) {
 *****************************************************************************/
 
 /* 符号 */
-float sgn (float x) {
+double sgn (double x) {
   if (fiszero(x)) {
     return 0.0;
   } else if (fispos(x)) {
@@ -225,8 +225,8 @@ float sgn (float x) {
 
 /* 符号付正規化 ゼロ割チェック*/
 void vecunit_sgn (vec_t *v, int inv) {
-  float l  = sqrt (fsqr(v->x) + fsqr(v->y) + fsqr(v->z));
-  float il;
+  double l  = sqrt (fsqr(v->x) + fsqr(v->y) + fsqr(v->z));
+  double il;
   if (fiszero(l)) {
     il = 1.0;
   } else if (inv) {
@@ -427,15 +427,15 @@ void vecunit_sgn (vec_t *v, int inv) {
 *****************************************************************************/
 
 /* ラジアン */
-float rad (float x) {
+double rad (double x) {
   return x * 0.017453293;
 }
 
 /**** 環境データの読み込み ****/
 
 void read_screen_settings (void) {
-  float v1, cos_v1, sin_v1;
-  float v2, cos_v2, sin_v2;
+  double v1, cos_v1, sin_v1;
+  double v2, cos_v2, sin_v2;
   screen.x = read_float();
   screen.y = read_float();
   screen.z = read_float();
@@ -464,12 +464,12 @@ void read_screen_settings (void) {
 
 void read_light(void) {
   int nl = read_int();
-  float l1 = rad(read_float());
-  float sl1 = sin(l1);
-  float l2 = rad(read_float());
-  float cl1 = cos(l1);
-  float sl2 = sin(l2);
-  float cl2 = cos(l2);
+  double l1 = rad(read_float());
+  double sl1 = sin(l1);
+  double l2 = rad(read_float());
+  double cl1 = cos(l1);
+  double sl2 = sin(l2);
+  double cl2 = cos(l2);
   light.y = - sl1;
   light.x = cl1 * sl2;
   light.z = cl1 * cl2;
@@ -478,29 +478,29 @@ void read_light(void) {
 
 void rotate_quadratic_matrix(vec_t *abc, vec_t *rot) {
   /* 回転行列の積 R(z)R(y)R(x) を計算する */
-  float cos_x = cos(rot->x);
-  float sin_x = sin(rot->x);
-  float cos_y = cos(rot->y);
-  float sin_y = sin(rot->y);
-  float cos_z = cos(rot->z);
-  float sin_z = sin(rot->z);
+  double cos_x = cos(rot->x);
+  double sin_x = sin(rot->x);
+  double cos_y = cos(rot->y);
+  double sin_y = sin(rot->y);
+  double cos_z = cos(rot->z);
+  double sin_z = sin(rot->z);
 
-  float m00 = cos_y * cos_z;
-  float m01 = sin_x * sin_y * cos_z - cos_x * sin_z;
-  float m02 = cos_x * sin_y * cos_z + sin_x * sin_z;
+  double m00 = cos_y * cos_z;
+  double m01 = sin_x * sin_y * cos_z - cos_x * sin_z;
+  double m02 = cos_x * sin_y * cos_z + sin_x * sin_z;
 
-  float m10 = cos_y * sin_z;
-  float m11 = sin_x * sin_y * sin_z + cos_x * cos_z;
-  float m12 = cos_x * sin_y * sin_z - sin_x * cos_z;
+  double m10 = cos_y * sin_z;
+  double m11 = sin_x * sin_y * sin_z + cos_x * cos_z;
+  double m12 = cos_x * sin_y * sin_z - sin_x * cos_z;
 
-  float m20 = - sin_y;
-  float m21 = sin_x * cos_y;
-  float m22 = cos_x * cos_y;
+  double m20 = - sin_y;
+  double m21 = sin_x * cos_y;
+  double m22 = cos_x * cos_y;
 
   /* a, b, cの元の値をバックアップ */
-  float ao = abc->x;
-  float bo = abc->y;
-  float co = abc->z;
+  double ao = abc->x;
+  double bo = abc->y;
+  double co = abc->z;
 
   /* R^t * A * R を計算 */
 
@@ -526,7 +526,7 @@ bool read_nth_object(int n) {
     vec_t abc;
     vec_t xyz;
     int m_invert;
-    float reflparam[2];
+    double reflparam[2];
     vec_t color;
     vec_t rotation;
 
@@ -569,9 +569,9 @@ bool read_nth_object(int n) {
     if (form == 3) {
       /* 2次曲面: X,Y,Z サイズから2次形式行列の対角成分へ */
 
-      float a = abc.x;
-      float b = abc.y;
-      float c = abc.z;
+      double a = abc.x;
+      double b = abc.y;
+      double c = abc.z;
       abc.x = (a == 0.0) ? 0.0 : (sgn(a) / fsqr(a)); /* X^2 成分 */
       abc.y = (b == 0.0) ? 0.0 : (sgn(b) / fsqr(b)); /* Y^2 成分 */
       abc.z = (c == 0.0) ? 0.0 : (sgn(c) / fsqr(c)); /* Z^2 成分 */
@@ -695,16 +695,16 @@ void read_parameter() {
 
 /* 直方体の指定された面に衝突するかどうか判定する */
 /* i0 : 面に垂直な軸のindex X:0, Y:1, Z:2         i2,i3は他の2軸のindex */
-bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, int i0, int i1, int i2) {
-  float *dirvec_arr = (float *) dirvec;
+bool solver_rect_surface(obj_t *m, vec_t *dirvec, double b0, double b1, double b2, int i0, int i1, int i2) {
+  double *dirvec_arr = (double *) dirvec;
   if (dirvec_arr[i0] == 0.0) {
     return false;
   } else {
     vec_t *abc = o_param_abc(m);
-    float *abc_arr = (float *) abc;
-    float d = fneg_cond(o_isinvert(m) ^ fisneg(dirvec_arr[i0]), abc_arr[i0]);
+    double *abc_arr = (double *) abc;
+    double d = fneg_cond(o_isinvert(m) ^ fisneg(dirvec_arr[i0]), abc_arr[i0]);
 
-    float d2 = (d - b0) / dirvec_arr[i0];
+    double d2 = (d - b0) / dirvec_arr[i0];
     if ((fabs(d2 * dirvec_arr[i1] + b1)) < abc_arr[i1]) {
       if ((fabs(d2 * dirvec_arr[i2] + b2)) < abc_arr[i2]) {
         solver_dist = d2;
@@ -722,7 +722,7 @@ bool solver_rect_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2, 
 
 
 /***** 直方体オブジェクトの場合 ****/
-int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_rect (obj_t *m, vec_t *dirvec, double b0, double b1, double b2) {
   if (solver_rect_surface(m, dirvec, b0, b1, b2, 0, 1, 2)) {
     return 1;   /* YZ 平面 */
   } else if (solver_rect_surface(m, dirvec, b1, b2, b0, 1, 2, 0)) {
@@ -736,11 +736,11 @@ int solver_rect (obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
 
 
 /* 平面オブジェクトの場合 */
-int solver_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_surface(obj_t *m, vec_t *dirvec, double b0, double b1, double b2) {
   /* 点と平面の符号つき距離 */
   /* 平面は極性が負に統一されている */
   vec_t *abc = o_param_abc(m);
-  float d = veciprod(dirvec, abc);
+  double d = veciprod(dirvec, abc);
   if (d > 0.0) {
     solver_dist = fneg(veciprod2(abc, b0, b1, b2)) / d;
     return 1;
@@ -751,8 +751,8 @@ int solver_surface(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
 
 /* 3変数2次形式 v^t A v を計算 */
 /* 回転が無い場合は対角部分のみ計算すれば良い */
-float quadratic(obj_t *m, float v0, float v1, float v2) {
-  float diag_part =
+double quadratic(obj_t *m, double v0, double v1, double v2) {
+  double diag_part =
     fsqr(v0) * o_param_a(m) + fsqr(v1) * o_param_b(m) + fsqr(v2) * o_param_c(m);
   if (o_isrot(m) == 0) {
     return diag_part;
@@ -766,8 +766,8 @@ float quadratic(obj_t *m, float v0, float v1, float v2) {
 
 /* 3変数双1次形式 v^t A w を計算 */
 /* 回転が無い場合は A の対角部分のみ計算すれば良い */
-float bilinear(obj_t *m, float v0, float v1, float v2, float w0, float w1, float w2) {
-  float diag_part =
+double bilinear(obj_t *m, double v0, double v1, double v2, double w0, double w1, double w2) {
+  double diag_part =
     v0 * w0 * o_param_a(m)
     + v1 * w1 * o_param_b(m)
     + v2 * w2 * o_param_c(m);
@@ -788,26 +788,26 @@ float bilinear(obj_t *m, float v0, float v1, float v2, float w0, float w1, float
    展開すると (dirvec^t A dirvec)*t^2 + 2*(dirvec^t A base)*t  +
    (base^t A base) - (0か1) = 0 、よってtに関する2次方程式を解けば良い。*/
 
-int solver_second(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
+int solver_second(obj_t *m, vec_t *dirvec, double b0, double b1, double b2) {
   /* 解の公式 (-b' ± sqrt(b'^2 - a*c)) / a  を使用(b' = b/2) */
   /* a = dirvec^t A dirvec */
-  float aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
+  double aa = quadratic(m, dirvec->x, dirvec->y, dirvec->z);
 
   if (aa == 0.0) {
     return 0; /* 正確にはこの場合も1次方程式の解があるが、無視しても通常は大丈夫 */
   } else {
 
     /* b' = b/2 = dirvec^t A base   */
-    float bb = bilinear(m, dirvec->x, dirvec->y, dirvec->z, b0, b1, b2);
+    double bb = bilinear(m, dirvec->x, dirvec->y, dirvec->z, b0, b1, b2);
     /* c = base^t A base  - (0か1)  */
-    float cc0 = quadratic(m, b0, b1, b2);
-    float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
+    double cc0 = quadratic(m, b0, b1, b2);
+    double cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
     /* 判別式 */
-    float d = bb * bb - aa * cc;
+    double d = bb * bb - aa * cc;
 
     if (d > 0.0) {
-      float sd = sqrt(d);
-      float t1 = o_isinvert(m) ? sd : - sd;
+      double sd = sqrt(d);
+      double t1 = o_isinvert(m) ? sd : - sd;
       solver_dist = (t1 - bb) /  aa;
       return 1;
     } else {
@@ -820,9 +820,9 @@ int solver_second(obj_t *m, vec_t *dirvec, float b0, float b1, float b2) {
 int solver(int index, vec_t *dirvec, vec_t *org) {
   obj_t *m = &objects[index];
   /* 直線の始点を物体の基準位置に合わせて平行移動 */
-  float b0 =  org->x - o_param_x(m);
-  float b1 =  org->y - o_param_y(m);
-  float b2 =  org->z - o_param_z(m);
+  double b0 =  org->x - o_param_x(m);
+  double b1 =  org->y - o_param_y(m);
+  double b2 =  org->z - o_param_z(m);
   int m_shape = o_form(m);
   /* 物体の種類に応じた補助関数を呼ぶ */
   int ret;
@@ -855,12 +855,12 @@ int solver(int index, vec_t *dirvec, vec_t *org) {
 */
 
 /***** solver_rectのdirvecテーブル使用高速版 ******/
-int solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, float b2) {
-  float d0 = (dconst[0] - b0) * dconst[1];
+int solver_rect_fast(obj_t *m, vec_t *v, double *dconst, double b0, double b1, double b2) {
+  double d0 = (dconst[0] - b0) * dconst[1];
   bool tmp0;
-  float d1 = (dconst[2] - b1) * dconst[3];
+  double d1 = (dconst[2] - b1) * dconst[3];
   bool tmp_zx;
-  float d2 = (dconst[4] - b2) * dconst[5];
+  double d2 = (dconst[4] - b2) * dconst[5];
   bool tmp_xy;
 
   /* YZ平面との衝突判定 */
@@ -909,7 +909,7 @@ int solver_rect_fast(obj_t *m, vec_t *v, float *dconst, float b0, float b1, floa
 
 
 /**** solver_surfaceのdirvecテーブル使用高速版 ******/
-int solver_surface_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
+int solver_surface_fast(obj_t *m, double *dconst, double b0, double b1, double b2) {
   if (fisneg(dconst[0])) {
     solver_dist = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
     return 1;
@@ -920,15 +920,15 @@ int solver_surface_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
 
 
 /**** solver_second のdirvecテーブル使用高速版 ******/
-int solver_second_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
-  float aa = dconst[0];
+int solver_second_fast(obj_t *m, double *dconst, double b0, double b1, double b2) {
+  double aa = dconst[0];
   if (fiszero(aa)) {
     return 0;
   } else {
-    float neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
-    float cc0 = quadratic(m, b0, b1, b2);
-    float cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
-    float d = fsqr(neg_bb) - aa * cc;
+    double neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
+    double cc0 = quadratic(m, b0, b1, b2);
+    double cc = o_form(m) == 3 ? cc0 - 1.0 : cc0;
+    double d = fsqr(neg_bb) - aa * cc;
     if (fispos(d)) {
       if (o_isinvert(m)) {
         solver_dist = (neg_bb + sqrt(d)) * dconst[4];
@@ -945,11 +945,11 @@ int solver_second_fast(obj_t *m, float *dconst, float b0, float b1, float b2) {
 /**** solver のdirvecテーブル使用高速版 *******/
 int solver_fast(int index, dvec_t *dirvec, vec_t *org) {
   obj_t *m = &objects[index];
-  float b0 = org->x - o_param_x(m);
-  float b1 = org->y - o_param_y(m);
-  float b2 = org->z - o_param_z(m);
-  float **dconsts = d_const(dirvec);
-  float  *dconst  = dconsts[index];
+  double b0 = org->x - o_param_x(m);
+  double b1 = org->y - o_param_y(m);
+  double b2 = org->z - o_param_z(m);
+  double **dconsts = d_const(dirvec);
+  double  *dconst  = dconsts[index];
   int m_shape = o_form(m);
   int ret;
   if (m_shape == 1) {
@@ -964,7 +964,7 @@ int solver_fast(int index, dvec_t *dirvec, vec_t *org) {
 
 
 /* solver_surfaceのdirvec+startテーブル使用高速版 */
-int solver_surface_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, float b1, float b2) {
+int solver_surface_fast2(obj_t *m, double *dconst, vec4_t *sconst, double b0, double b1, double b2) {
   if (fisneg(dconst[0])) {
     solver_dist = dconst[0] * sconst->w;
     return 1;
@@ -974,14 +974,14 @@ int solver_surface_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, floa
 }
 
 /* solver_secondのdirvec+startテーブル使用高速版 */
-int solver_second_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, float b1, float b2) {
-  float aa = dconst[0];
+int solver_second_fast2(obj_t *m, double *dconst, vec4_t *sconst, double b0, double b1, double b2) {
+  double aa = dconst[0];
   if (fiszero(aa)) {
     return 0;
   } else {
-    float neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
-    float cc = sconst->w;
-    float d = fsqr(neg_bb) - aa * cc;
+    double neg_bb = dconst[1] * b0 + dconst[2] * b1 + dconst[3] * b2;
+    double cc = sconst->w;
+    double d = fsqr(neg_bb) - aa * cc;
     if (fispos(d)) {
       if (o_isinvert(m)) {
         solver_dist = (neg_bb + sqrt(d)) * dconst[4];
@@ -999,11 +999,11 @@ int solver_second_fast2(obj_t *m, float *dconst, vec4_t *sconst, float b0, float
 int solver_fast2(int index, dvec_t *dirvec) {
   obj_t *m = &objects[index];
   vec4_t *sconst = o_param_ctbl(m);
-  float b0 = sconst->x;
-  float b1 = sconst->y;
-  float b2 = sconst->z;
-  float **dconsts = d_const(dirvec);
-  float  *dconst  = dconsts[index];
+  double b0 = sconst->x;
+  double b1 = sconst->y;
+  double b2 = sconst->z;
+  double **dconsts = d_const(dirvec);
+  double  *dconst  = dconsts[index];
   int m_shape = o_form(m);
   if (m_shape == 1) {
     return solver_rect_fast(m, d_vec(dirvec), dconst, b0, b1, b2);
@@ -1019,8 +1019,8 @@ int solver_fast2(int index, dvec_t *dirvec) {
 *****************************************************************************/
 
 /* 直方体オブジェクトに対する前処理 */
-float* setup_rect_table(vec_t *vec, obj_t *m) {
-  float *consts = (float*)malloc(6 * sizeof(float));
+double* setup_rect_table(vec_t *vec, obj_t *m) {
+  double *consts = (double*)malloc(6 * sizeof(double));
 
   if (fiszero(vec->x)) { /* YZ平面 */
     consts[1] = 0.0;
@@ -1046,9 +1046,9 @@ float* setup_rect_table(vec_t *vec, obj_t *m) {
 }
 
 /* 平面オブジェクトに対する前処理 */
-float* setup_surface_table(vec_t *vec, obj_t *m) {
-  float *consts = (float*)malloc(4 * sizeof(float));
-  float d = vec->x * o_param_a(m) + vec->y * o_param_b(m) + vec->z * o_param_c(m);
+double* setup_surface_table(vec_t *vec, obj_t *m) {
+  double *consts = (double*)malloc(4 * sizeof(double));
+  double d = vec->x * o_param_a(m) + vec->y * o_param_b(m) + vec->z * o_param_c(m);
   if (fispos(d)) {
     /* 方向ベクトルを何倍すれば平面の垂直方向に 1 進むか */
     consts[0] = -1.0 / d;
@@ -1067,12 +1067,12 @@ float* setup_surface_table(vec_t *vec, obj_t *m) {
 
 
 /* 2次曲面に対する前処理 */
-float* setup_second_table(vec_t *v, obj_t *m) {
-  float *consts = malloc(5 * sizeof(float));
-  float aa = quadratic(m, v->x, v->y, v->z);
-  float c1 = fneg(v->x * o_param_a(m));
-  float c2 = fneg(v->y * o_param_b(m));
-  float c3 = fneg(v->z * o_param_c(m));
+double* setup_second_table(vec_t *v, obj_t *m) {
+  double *consts = malloc(5 * sizeof(double));
+  double aa = quadratic(m, v->x, v->y, v->z);
+  double c1 = fneg(v->x * o_param_a(m));
+  double c2 = fneg(v->y * o_param_b(m));
+  double c3 = fneg(v->z * o_param_c(m));
 
   consts[0] = aa;  /* 2次方程式の a 係数 */
 
@@ -1102,7 +1102,7 @@ float* setup_second_table(vec_t *v, obj_t *m) {
 void iter_setup_dirvec_constants (dvec_t *dirvec, int index) {
   while (index >= 0) {
     obj_t *m = &objects[index];
-    float **dconst = d_const(dirvec);
+    double **dconst = d_const(dirvec);
     vec_t *v = d_vec(dirvec);
     int m_shape = o_form(m);
 
@@ -1138,7 +1138,7 @@ void setup_startp_constants(vec_t *p, int index) {
     if (m_shape == 2) { /* surface */
       sconst->w = veciprod2(o_param_abc(obj), sconst->x, sconst->y, sconst->z);
     } else if (m_shape > 2) { /* second */
-      float cc0 = quadratic(obj, sconst->x, sconst->y, sconst->z);
+      double cc0 = quadratic(obj, sconst->x, sconst->y, sconst->z);
       sconst->w = (m_shape == 3 ? cc0 - 1.0 : cc0);
     }
 
@@ -1158,7 +1158,7 @@ void setup_startp(vec_t *p) {
 /**** 点 q がオブジェクト m の外部かどうかを判定する ****/
 
 /* 直方体 */
-bool is_rect_outside(obj_t *m, float p0, float p1, float p2) {
+bool is_rect_outside(obj_t *m, double p0, double p1, double p2) {
   bool b0 = fabs(p0) < o_param_a(m);
   bool b1 = fabs(p1) < o_param_b(m);
   bool b2 = fabs(p2) < o_param_c(m);
@@ -1170,23 +1170,23 @@ bool is_rect_outside(obj_t *m, float p0, float p1, float p2) {
 }
 
 /* 平面 */
-bool is_plane_outside(obj_t *m, float p0, float p1, float p2) {
-  float w = veciprod2(o_param_abc(m), p0, p1, p2);
+bool is_plane_outside(obj_t *m, double p0, double p1, double p2) {
+  double w = veciprod2(o_param_abc(m), p0, p1, p2);
   return !(o_isinvert(m) ^ fisneg(w));
 }
 
 /* 2次曲面 */
-bool is_second_outside(obj_t *m, float p0, float p1, float p2) {
-  float w  = quadratic(m, p0, p1, p2);
-  float w2 = (o_form(m) == 3 ? w - 1.0 : w);
+bool is_second_outside(obj_t *m, double p0, double p1, double p2) {
+  double w  = quadratic(m, p0, p1, p2);
+  double w2 = (o_form(m) == 3 ? w - 1.0 : w);
   return !(o_isinvert(m) ^ fisneg(w2));
 }
 
 /* 物体の中心座標に平行移動した上で、適切な補助関数を呼ぶ */
-bool is_outside(obj_t *m, float q0, float q1, float q2) {
-  float p0 = q0 - o_param_x(m);
-  float p1 = q1 - o_param_y(m);
-  float p2 = q2 - o_param_z(m);
+bool is_outside(obj_t *m, double q0, double q1, double q2) {
+  double p0 = q0 - o_param_x(m);
+  double p1 = q1 - o_param_y(m);
+  double p2 = q2 - o_param_z(m);
   int m_shape = o_form(m);
   if (m_shape == 1) {
     return is_rect_outside(m, p0, p1, p2);
@@ -1197,7 +1197,7 @@ bool is_outside(obj_t *m, float q0, float q1, float q2) {
   }
 }
 
-bool check_all_inside(int ofs, int *iand, float q0, float q1, float q2) {
+bool check_all_inside(int ofs, int *iand, double q0, double q1, double q2) {
   int head;
   while((head = iand[ofs]) != -1){
 
@@ -1224,15 +1224,15 @@ bool shadow_check_and_group(int iand_ofs, int *and_group) {
   while (and_group[iand_ofs] != -1) {
     int obj   = and_group[iand_ofs];
     int t0  = solver_fast(obj, &light_dirvec, &intersection_point);
-    float t0p = solver_dist;
+    double t0p = solver_dist;
 
     if (t0 != 0 && t0p < -0.2) {
       /* Q: 交点の候補。実際にすべてのオブジェクトに */
       /* 入っているかどうかを調べる。*/
-      float t  = t0p + 0.01;
-      float q0 = light.x * t + intersection_point.x;
-      float q1 = light.y * t + intersection_point.y;
-      float q2 = light.z * t + intersection_point.z;
+      double t  = t0p + 0.01;
+      double q0 = light.x * t + intersection_point.x;
+      double q1 = light.y * t + intersection_point.y;
+      double q2 = light.z * t + intersection_point.z;
       if (check_all_inside(0, and_group, q0, q1, q2)) {
         return true;
       }
@@ -1312,13 +1312,13 @@ void solve_each_element(int iand_ofs, int *and_group, vec_t *dirvec) {
     if (t0 != 0) {
       /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
       /* 今までの中で最小の t の値と比べる。*/
-      float t0p = solver_dist;
+      double t0p = solver_dist;
       if (0.0 < t0p && t0p < tmin) {
-        float t = t0p + 0.01;
+        double t = t0p + 0.01;
         vec_t *v = dirvec;
-        float q0 = v->x * t + startp.x;
-        float q1 = v->y * t + startp.y;
-        float q2 = v->z * t + startp.z;
+        double q0 = v->x * t + startp.x;
+        double q1 = v->y * t + startp.y;
+        double q2 = v->z * t + startp.z;
         if (check_all_inside(0, and_group, q0, q1, q2)) {
           tmin = t;
           vecset(&intersection_point, q0, q1, q2);
@@ -1360,7 +1360,7 @@ void trace_or_matrix(int ofs, int **or_network, vec_t *dirvec) {
       solve_one_or_network(1, head, dirvec);
     } else {
       /* range primitive の衝突しなければ交点はない */
-      float t = solver(range_primitive, dirvec, &startp);
+      double t = solver(range_primitive, dirvec, &startp);
       if (t != 0 && solver_dist < tmin) {
         solve_one_or_network(1, head, dirvec);
       }
@@ -1373,7 +1373,7 @@ void trace_or_matrix(int ofs, int **or_network, vec_t *dirvec) {
 /* Vscan から、交点 crashed_point と衝突したオブジェクト        */
 /* crashed_object を返す。関数自体の返り値は交点の有無の真偽値。 */
 bool judge_intersection(vec_t *dirvec) {
-  float t;
+  double t;
   tmin = 1000000000.0;
   trace_or_matrix(0, or_net, dirvec);
   t = tmin;
@@ -1396,10 +1396,10 @@ void solve_each_element_fast(int iand_ofs, int *and_group, dvec_t *dirvec) {
       /* 交点がある時は、その交点が他の要素の中に含まれるかどうか調べる。*/
       /* 今までの中で最小の t の値と比べる。*/
       if (0.0 < solver_dist && solver_dist < tmin) {
-        float t  = solver_dist + 0.01;
-        float q0 = vec->x * t + startp_fast.x;
-        float q1 = vec->y * t + startp_fast.y;
-        float q2 = vec->z * t + startp_fast.z;
+        double t  = solver_dist + 0.01;
+        double q0 = vec->x * t + startp_fast.x;
+        double q1 = vec->y * t + startp_fast.y;
+        double q2 = vec->z * t + startp_fast.z;
         if (check_all_inside(0, and_group, q0, q1, q2)) {
           tmin = t;
           vecset(&intersection_point, q0, q1, q2);
@@ -1435,7 +1435,7 @@ void trace_or_matrix_fast(int ofs, int **or_network, dvec_t *dirvec) {
       solve_one_or_network_fast(1, head, dirvec);
     } else {
       /* range primitive の衝突しなければ交点はない */
-      float t = solver_fast2(range_primitive, dirvec);
+      double t = solver_fast2(range_primitive, dirvec);
       if (t != 0 && solver_dist < tmin) {
         solve_one_or_network_fast(1, head, dirvec);
       }
@@ -1445,7 +1445,7 @@ void trace_or_matrix_fast(int ofs, int **or_network, dvec_t *dirvec) {
 
 /**** トレース本体 ****/
 bool judge_intersection_fast(dvec_t *dirvec) {
-  float t;
+  double t;
   tmin = 1000000000.0;
   trace_or_matrix_fast(0, or_net, dirvec);
   t = tmin;
@@ -1496,13 +1496,13 @@ void get_nvector_plane(obj_t *m) {
 
 /* 2次曲面 :  grad x^t A x = 2 A x を正規化する */
 void get_nvector_second(obj_t *m) {
-  float p0 = intersection_point.x - o_param_x(m);
-  float p1 = intersection_point.y - o_param_y(m);
-  float p2 = intersection_point.z - o_param_z(m);
+  double p0 = intersection_point.x - o_param_x(m);
+  double p1 = intersection_point.y - o_param_y(m);
+  double p2 = intersection_point.z - o_param_z(m);
 
-  float d0 = p0 * o_param_a(m);
-  float d1 = p1 * o_param_b(m);
-  float d2 = p2 * o_param_c(m);
+  double d0 = p0 * o_param_a(m);
+  double d1 = p1 * o_param_b(m);
+  double d2 = p2 * o_param_c(m);
 
   if (o_isrot(m) == 0) {
     nvector.x = d0;
@@ -1542,10 +1542,10 @@ void utexture(obj_t *m, vec_t *p) {
   texture_color.z = o_color_blue(m);
   if (m_tex == 1) {
     /* zx方向のチェッカー模様 (G) */
-    float w1 = p->x - o_param_x(m);
-    float d1 = (floor(w1 * 0.05)) * 20.0;
-    float w3 = p->z - o_param_z(m);
-    float d2 = (floor(w3 * 0.05)) * 20.0;
+    double w1 = p->x - o_param_x(m);
+    double d1 = (floor(w1 * 0.05)) * 20.0;
+    double w3 = p->z - o_param_z(m);
+    double d2 = (floor(w3 * 0.05)) * 20.0;
     int flag1 = (w1-d1 < 10.0);
     int flag2 = (w3-d2 < 10.0);
     if (flag1 ^ flag2) {
@@ -1555,27 +1555,27 @@ void utexture(obj_t *m, vec_t *p) {
     }
   } else if (m_tex == 2) {
     /* y軸方向のストライプ (R-G) */
-    float w2 = fsqr(sin(p->y * 0.25));
+    double w2 = fsqr(sin(p->y * 0.25));
     texture_color.x = 255.0 * w2;
     texture_color.y = 255.0 * (1.0 - w2);
   } else if (m_tex == 3) {
     /* ZX面方向の同心円 (G-B) */
-    float w1 = p->x - o_param_x(m);
-    float w3 = p->z - o_param_z(m);
-    float w2 = sqrt (fsqr(w1) + fsqr(w3)) / 10.0;
-    float w4 = (w2 - floor(w2)) * 3.1415927;
-    float cws= fsqr(cos(w4));
+    double w1 = p->x - o_param_x(m);
+    double w3 = p->z - o_param_z(m);
+    double w2 = sqrt (fsqr(w1) + fsqr(w3)) / 10.0;
+    double w4 = (w2 - floor(w2)) * 3.1415927;
+    double cws= fsqr(cos(w4));
     texture_color.y = cws * 255.0;
     texture_color.z = (1.0 - cws) * 255.0;
   } else if (m_tex == 4) {
     /* 球面上の斑点 (B) */
-    float w1 = (p->x - o_param_x(m)) * (sqrt(o_param_a(m)));
-    float w2 = (p->z - o_param_y(m)) * (sqrt(o_param_b(m)));
-    float w3 = (p->z - o_param_z(m)) * (sqrt(o_param_c(m)));
-    float w4 = fsqr(w1) + fsqr(w3);
-    float w5 = fabs(w3 / w1);
-    float w6 = fabs(w2 / w4);
-    float w7, w8, w9, w10, w11, w12;
+    double w1 = (p->x - o_param_x(m)) * (sqrt(o_param_a(m)));
+    double w2 = (p->z - o_param_y(m)) * (sqrt(o_param_b(m)));
+    double w3 = (p->z - o_param_z(m)) * (sqrt(o_param_c(m)));
+    double w4 = fsqr(w1) + fsqr(w3);
+    double w5 = fabs(w3 / w1);
+    double w6 = fabs(w2 / w4);
+    double w7, w8, w9, w10, w11, w12;
     if (fabs(w1) < 1.0e-4) {
       w7 = 15.0; /* atan +infty = pi/2 */
     } else {
@@ -1599,7 +1599,7 @@ void utexture(obj_t *m, vec_t *p) {
 *****************************************************************************/
 
 /* 当たった光による拡散光と不完全鏡面反射光による寄与をRGB値に加算 */
-void add_light(float bright, float hilight, float hilight_scale) {
+void add_light(double bright, double hilight, double hilight_scale) {
 
   /* 拡散光 */
   if (fispos(bright)) {
@@ -1608,7 +1608,7 @@ void add_light(float bright, float hilight, float hilight_scale) {
 
   /* 不完全鏡面反射 cos ^4 モデル */
   if (fispos(hilight)) {
-    float ihl = fsqr(fsqr(hilight)) * hilight_scale;
+    double ihl = fsqr(fsqr(hilight)) * hilight_scale;
     rgb.x += ihl;
     rgb.y += ihl;
     rgb.z += ihl;
@@ -1618,7 +1618,7 @@ void add_light(float bright, float hilight, float hilight_scale) {
 
 
 /* 各物体による光源の反射光を計算する関数(直方体と平面のみ) */
-void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dirvec) {
+void trace_reflections(int index, double diffuse, double hilight_scale, vec_t *dirvec) {
   while (index >= 0) {
     refl_t *rinfo = &reflections[index--]; /* 鏡平面の反射情報 */
     dvec_t *dvec  = r_dvec(rinfo);       /* 反射光の方向ベクトル(光と逆向き */
@@ -1630,10 +1630,10 @@ void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dir
         /* 鏡面との衝突点が光源の影になっていなければ反射光は届く */
         if (!shadow_check_one_or_matrix(0, or_net)) {
           /* 届いた反射光による RGB成分への寄与を加算 */
-          float p = veciprod_d(dvec, &nvector);
-          float scale = r_bright(rinfo);
-          float bright = scale  * diffuse * p;
-          float hilight = scale * veciprod(dirvec, d_vec(dvec));
+          double p = veciprod_d(dvec, &nvector);
+          double scale = r_bright(rinfo);
+          double bright = scale  * diffuse * p;
+          double hilight = scale * veciprod(dirvec, d_vec(dvec));
           add_light(bright, hilight, hilight_scale);
         }
       }
@@ -1645,7 +1645,7 @@ void trace_reflections(int index, float diffuse, float hilight_scale, vec_t *dir
    直接光を追跡する
 *****************************************************************************/
 // iteration TODO
-void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist) {
+void trace_ray(int nref, double energy, vec_t *dirvec, pixel_t *pixel, double dist) {
   if (nref <= 4) {
     int *surface_ids = p_surface_ids(pixel);
     if (judge_intersection(dirvec)) {
@@ -1653,10 +1653,10 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       int obj_id = intersected_object_id;
       obj_t *obj = &objects[obj_id];
       int m_surface = o_reflectiontype(obj);
-      float diffuse = o_diffuse(obj) * energy;
+      double diffuse = o_diffuse(obj) * energy;
       vec_t *intersection_points;
       int *calc_diffuse;
-      float w, hilight_scale;
+      double w, hilight_scale;
       get_nvector(obj, dirvec); /* 法線ベクトルを get */
       startp = intersection_point;  /* 交差点を新たな光の発射点とする */
       utexture(obj, &intersection_point); /*テクスチャを計算 */
@@ -1686,8 +1686,8 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       hilight_scale = energy * o_hilight(obj);
       /* 光源光が直接届く場合、RGB成分にこれを加味する */
       if (!(shadow_check_one_or_matrix(0, or_net))) {
-        float bright = fneg(veciprod(&nvector, &light)) * diffuse;
-        float hilight = fneg(veciprod(dirvec, &light));
+        double bright = fneg(veciprod(&nvector, &light)) * diffuse;
+        double hilight = fneg(veciprod(dirvec, &light));
         add_light(bright, hilight, hilight_scale);
       }
 
@@ -1701,7 +1701,7 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
           surface_ids[nref+1] = -1;
         }
         if (m_surface == 2) {
-          float energy2 = energy * (1.0 - o_diffuse(obj));
+          double energy2 = energy * (1.0 - o_diffuse(obj));
           trace_ray(nref+1, energy2, dirvec, pixel, dist + tmin);
         }
       }
@@ -1710,11 +1710,11 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
       /* どの物体にも当たらなかった場合。光源からの光を加味 */
       surface_ids[nref] = -1;
       if (nref != 0) {
-        float hl = fneg(veciprod(dirvec, &light));
+        double hl = fneg(veciprod(dirvec, &light));
         /* 90°を超える場合は0 (光なし) */
         if (fispos(hl)) {
           /* ハイライト強度は角度の cos^3 に比例 */
-          float ihl = fsqr(hl) * hl * energy * beam;
+          double ihl = fsqr(hl) * hl * energy * beam;
           rgb.x += ihl;
           rgb.y += ihl;
           rgb.z += ihl;
@@ -1734,7 +1734,7 @@ void trace_ray(int nref, float energy, vec_t *dirvec, pixel_t *pixel, float dist
 /* ある点が特定の方向から受ける間接光の強さを計算する */
 /* 間接光の方向ベクトル dirvecに関しては定数テーブルが作られており、衝突判定
    が高速に行われる。物体に当たったら、その後の反射は追跡しない */
-void trace_diffuse_ray(dvec_t *dirvec, float energy) {
+void trace_diffuse_ray(dvec_t *dirvec, double energy) {
   /* どれかの物体に当たるか調べる */
   if (judge_intersection_fast(dirvec)) {
     obj_t *obj = &objects[intersected_object_id];
@@ -1743,8 +1743,8 @@ void trace_diffuse_ray(dvec_t *dirvec, float energy) {
 
     /* その物体が放射する光の強さを求める。直接光源光のみを計算 */
     if (!shadow_check_one_or_matrix(0, or_net)) {
-      float br = fneg(veciprod(&nvector, &light));
-      float bright = (fispos(br) ? br : 0.0);
+      double br = fneg(veciprod(&nvector, &light));
+      double bright = (fispos(br) ? br : 0.0);
       vecaccum(&diffuse_ray,
                energy * bright * o_diffuse(obj),
                &texture_color);
@@ -1757,7 +1757,7 @@ void trace_diffuse_ray(dvec_t *dirvec, float energy) {
    間接光の強さをサンプリングして加算する */
 void iter_trace_diffuse_rays(dvec_t *dirvec_group, vec_t *nvector, vec_t *org, int index) {
   while (index >= 0) {
-    float p = veciprod(d_vec(&dirvec_group[index]), nvector);
+    double p = veciprod(d_vec(&dirvec_group[index]), nvector);
 
     /* 配列の 2n 番目と 2n+1 番目には互いに逆向の方向ベクトルが入っている
        法線ベクトルと同じ向きの物を選んで使う */
@@ -1923,8 +1923,8 @@ void write_ppm_header() {
   print_char(10);
 }
 
-void write_rgb_element(float x) {
-  int ix = int_of_float(x);
+void write_rgb_element(double x) {
+  int ix = int_of_double(x);
   int elem = ix;
   if (ix > 255) {
     elem = 255;
@@ -1979,9 +1979,9 @@ void pretrace_diffuse_rays(pixel_t *pixel, int nref) {
 
 
 /* 各ピクセルに対して直接光追跡と間接受光の20%分の計算を行う */
-void pretrace_pixels(pixel_t *line, int x, int group_id, float lc0, float lc1, float lc2) {
+void pretrace_pixels(pixel_t *line, int x, int group_id, double lc0, double lc1, double lc2) {
   while (x >= 0) {
-    float xdisp = scan_pitch * float_of_int(x - image_center[0]);
+    double xdisp = scan_pitch * float_of_int(x - image_center[0]);
     ptrace_dirvec.x = xdisp * screenx_dir.x + lc0;
     ptrace_dirvec.y = xdisp * screenx_dir.y + lc1;
     ptrace_dirvec.z = xdisp * screenx_dir.z + lc2;
@@ -2005,11 +2005,11 @@ void pretrace_pixels(pixel_t *line, int x, int group_id, float lc0, float lc1, f
 
 /* あるラインの各ピクセルに対し直接光追跡と間接受光20%分の計算をする */
 void pretrace_line(pixel_t *line, int y, int group_id) {
-  float ydisp = scan_pitch * float_of_int(y - image_center[1]);
+  double ydisp = scan_pitch * float_of_int(y - image_center[1]);
   /* ラインの中心に向かうベクトルを計算 */
-  float lc0 = ydisp * screeny_dir.x + screenz_dir.x;
-  float lc1 = ydisp * screeny_dir.y + screenz_dir.y;
-  float lc2 = ydisp * screeny_dir.z + screenz_dir.z;
+  double lc0 = ydisp * screeny_dir.x + screenz_dir.x;
+  double lc1 = ydisp * screeny_dir.y + screenz_dir.y;
+  double lc2 = ydisp * screeny_dir.z + screenz_dir.z;
   pretrace_pixels(line, image_size[0] - 1, group_id, lc0, lc1, lc2);
 }
 
@@ -2088,17 +2088,17 @@ pixel_t *create_pixelline() {
    大きいので、これに補正を加えたものを最終的に用いる */
 
 /* ベクトル達が出来るだけ球面状に一様に分布するよう座標を補正する */
-float adjust_position(float h, float ratio) {
-  float l = sqrt(h * h + 0.1);
-  float tan_h = 1.0 / l;
-  float theta_h = atan(tan_h);
-  float tan_m = tan(theta_h * ratio);
+double adjust_position(double h, double ratio) {
+  double l = sqrt(h * h + 0.1);
+  double tan_h = 1.0 / l;
+  double theta_h = atan(tan_h);
+  double tan_m = tan(theta_h * ratio);
   return tan_m * l;
 }
 
 /* ベクトル達が出来るだけ球面状に一様に分布するような向きを計算する */
-void calc_dirvec(int icount, float x, float y, float rx, float ry, int group_id, int index) {
-  float l, vx, vy, vz;
+void calc_dirvec(int icount, double x, double y, double rx, double ry, int group_id, int index) {
+  double l, vx, vy, vz;
   dvec_t *dgroup;
 
   for(; icount < 5; ++icount) {
@@ -2123,9 +2123,9 @@ void calc_dirvec(int icount, float x, float y, float rx, float ry, int group_id,
 }
 
 /* 立方体上の 10x10格子の行中の各ベクトルを計算する */
-void calc_dirvecs(int col, float ry, int group_id, int index) {
+void calc_dirvecs(int col, double ry, int group_id, int index) {
   while (col >= 0) {
-    float rx, rx2;
+    double rx, rx2;
     /* 左半分 */
     rx = float_of_int(col) * 0.2 - 0.9; /* 列の座標 */
     calc_dirvec(0, 0.0, 0.0, rx, ry, group_id, index);
@@ -2143,7 +2143,7 @@ void calc_dirvecs(int col, float ry, int group_id, int index) {
 /* 立方体上の10x10格子の各行に対しベクトルの向きを計算する */
 void calc_dirvec_rows(int row, int group_id, int index) {
   while (row >= 0) {
-    float ry = float_of_int(row) * 0.2 - 0.9; /* 行の座標 */
+    double ry = float_of_int(row) * 0.2 - 0.9; /* 行の座標 */
     calc_dirvecs(4, ry, group_id, index); /* 一行分計算 */
     --row;
     group_id += 2;
@@ -2184,7 +2184,7 @@ void init_dirvecs() {
 *****************************************************************************/
 
 /* 反射平面を追加する */
-void add_reflection(int index, int surface_id, float bright, float v0, float v1, float v2) {
+void add_reflection(int index, int surface_id, double bright, double v0, double v1, double v2) {
   dvec_t *dvec = &reflections[index].dv;
   vecset(d_vec(dvec), v0, v1, v2); /* 反射光の向き */
   setup_dirvec_constants(dvec);
@@ -2196,10 +2196,10 @@ void add_reflection(int index, int surface_id, float bright, float v0, float v1,
 void setup_rect_reflection(int obj_id, obj_t *obj) {
   int sid = obj_id * 4;
   int nr  = n_reflections;
-  float br = 1.0 - o_diffuse(obj);
-  float n0 = fneg(light.x);
-  float n1 = fneg(light.y);
-  float n2 = fneg(light.z);
+  double br = 1.0 - o_diffuse(obj);
+  double n0 = fneg(light.x);
+  double n1 = fneg(light.y);
+  double n2 = fneg(light.z);
   add_reflection(nr, sid + 1, br, light.x, n1, n2);
   add_reflection(nr + 1, sid + 2, br, n0, light.y, n2);
   add_reflection(nr + 2, sid + 3, br, n0, n1, light.z);
@@ -2211,8 +2211,8 @@ void setup_rect_reflection(int obj_id, obj_t *obj) {
 void setup_surface_reflection(int obj_id, obj_t *obj) {
   int sid = obj_id * 4 + 1;
   int nr  = n_reflections;
-  float br = 1.0 - o_diffuse(obj);
-  float p = veciprod(&light, o_param_abc(obj));
+  double br = 1.0 - o_diffuse(obj);
+  double p = veciprod(&light, o_param_abc(obj));
   add_reflection(nr, sid, br,
                  2.0 * o_param_a(obj) * p - light.x,
                  2.0 * o_param_b(obj) * p - light.y,
