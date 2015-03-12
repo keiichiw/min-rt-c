@@ -137,7 +137,7 @@ vec_t screenz_dir;
 vec_t ptrace_dirvec;
 
 /* 間接光サンプリングに使う方向ベクトル */
-dvec_t dirvecs[5][120];
+dvec_t *dirvecs[5];
 
 /* 光源光の前処理済み方向ベクトル */
 dvec_t light_dirvec;
@@ -2151,6 +2151,14 @@ void calc_dirvec_rows(int row, int group_id, int index) {
   }
 }
 
+void create_dirvecs(int index) {
+
+  while(index >= 0) {
+    dirvecs[index] = calloc(120, sizeof(dvec_t));
+    --index;
+  }
+
+}
 
 
 /******************************************************************************
@@ -2171,6 +2179,7 @@ void init_vecset_constants(int index) {
 }
 
 void init_dirvecs() {
+  create_dirvecs(4);
   calc_dirvec_rows(9, 0, 0);
   init_vecset_constants(4);
 }
