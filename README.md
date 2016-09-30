@@ -6,7 +6,7 @@ min-rtのANSI-Cへの移植
 ## MinCaml内のraytrace.cとの比較
 
 MinCamlレポジトリ内にもmin-rtのC実装である[raytrace.c](https://github.com/esumii/min-caml/blob/master/min-rt/raytrace.c)が存在するが、以下の点が異なる
-* min-rt-cはC標準の範囲内で実装されている
+* min-rt-cはANSI-Cの範囲内で実装されている
   - min-rt-cは `-pedantic-errors` オプションをつけてもコンパイルできるが、raytrace.cはそのままではできない
 * min-rt-cは[ML版min-rt](https://github.com/kw-udon/min-rt-c/blob/master/origin/min-rt.ml)に忠実な実装を目指した
   - 関数名、構造体名などはML版と同じものを使用
